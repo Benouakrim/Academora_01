@@ -1,166 +1,178 @@
-import { Calculator, GraduationCap, DollarSign, TrendingUp } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { GraduationCap, DollarSign, Users, Briefcase } from 'lucide-react'
 import type { UniversityDetail } from '@/hooks/useUniversityDetail'
 
-type UniversityTabsProps = {
-  university: UniversityDetail
-  onOpenCalculator?: () => void
-}
+// Helper for formatting currency
+const fmtMoney = (val: number | null) => val ? `$${val.toLocaleString()}` : 'N/A'
+const fmtPct = (val: number | null) => val ? `${(val * 100).toFixed(1)}%` : 'N/A'
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+function StatRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-      <div className="p-2 rounded-md bg-primary/10 text-primary">{icon}</div>
-      <div>
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="text-lg font-semibold">{value}</p>
-      </div>
+    <div className="flex justify-between py-3 border-b last:border-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
     </div>
   )
 }
 
-export default function UniversityTabs({ university, onOpenCalculator }: UniversityTabsProps) {
-  const formatCurrency = (value: number | null) => {
-    if (value === null || value === undefined) return 'N/A'
-    return `$${(value / 1000).toFixed(0)}k`
-  }
-
-  const formatPercent = (value: number | null) => {
-    if (value === null || value === undefined) return 'N/A'
-    return `${(value * 100).toFixed(0)}%`
-  }
-
+export default function UniversityTabs({ university }: { university: UniversityDetail }) {
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
-      <Tabs defaultValue="overview">
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="admissions">Admissions</TabsTrigger>
-          <TabsTrigger value="costs">Costs</TabsTrigger>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+      <Tabs defaultValue="overview" className="space-y-8">
+        <TabsList className="bg-muted/50 p-1 h-12">
+          <TabsTrigger value="overview" className="h-10 px-6">Overview</TabsTrigger>
+          <TabsTrigger value="admissions" className="h-10 px-6">Admissions</TabsTrigger>
+          <TabsTrigger value="costs" className="h-10 px-6">Costs & Aid</TabsTrigger>
+          <TabsTrigger value="outcomes" className="h-10 px-6">Outcomes</TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>About {university.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground leading-relaxed">
-                {university.description || 'No description available.'}
-              </p>
-            </CardContent>
-          </Card>
-
-          {university.popularMajors && university.popularMajors.length > 0 && (
+        {/* --- OVERVIEW TAB --- */}
+        <TabsContent value="overview" className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>About</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="leading-relaxed text-muted-foreground">{university.description || "No description available."}</p>
+              </CardContent>
+            </Card>
+            
             <Card>
               <CardHeader>
                 <CardTitle>Popular Majors</CardTitle>
-                <CardDescription>Most sought-after programs at this university</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {university.popularMajors.map((major, idx) => (
-                    <Badge key={idx} variant="secondary">
-                      {major}
-                    </Badge>
-                  ))}
-                </div>
+              <CardContent className="flex flex-wrap gap-2">
+                {university.popularMajors.map(m => (
+                  <Badge key={m} variant="secondary" className="px-3 py-1 text-sm">{m}</Badge>
+                ))}
               </CardContent>
             </Card>
-          )}
+          </div>
 
-          {university.ranking && (
+          <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Ranking</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" /> Student Body
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  <span className="text-2xl font-bold">#{university.ranking}</span>
-                  <span className="text-muted-foreground">National Ranking</span>
+              <CardContent className="space-y-4">
+                <StatRow label="Total Students" value={university.studentPopulation?.toLocaleString()} />
+                <StatRow label="Student/Faculty Ratio" value={`1:${university.studentFacultyRatio || '?'}`} />
+                <div className="space-y-1 pt-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Male</span>
+                    <span>Female</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+                    <div className="bg-blue-500 h-full" style={{ width: `${(university.percentMale || 0.5) * 100}%` }} />
+                    <div className="bg-pink-500 h-full" style={{ width: `${(university.percentFemale || 0.5) * 100}%` }} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
+          </div>
         </TabsContent>
 
-        {/* Admissions Tab */}
-        <TabsContent value="admissions" className="space-y-6">
+        {/* --- ADMISSIONS TAB --- */}
+        <TabsContent value="admissions" className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card>
-            <CardHeader>
-              <CardTitle>Admissions Requirements</CardTitle>
-              <CardDescription>Typical profile of admitted students</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <StatCard
-                  icon={<GraduationCap className="h-5 w-5" />}
-                  label="Acceptance Rate"
-                  value={formatPercent(university.acceptanceRate)}
-                />
-                <StatCard
-                  icon={<TrendingUp className="h-5 w-5" />}
-                  label="Minimum GPA"
-                  value={university.minGpa?.toFixed(2) || 'N/A'}
-                />
-                <StatCard
-                  icon={<GraduationCap className="h-5 w-5" />}
-                  label="Average SAT"
-                  value={university.avgSatScore || 'N/A'}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Costs Tab */}
-        <TabsContent value="costs" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tuition & Fees</CardTitle>
-              <CardDescription>Annual cost breakdown</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <StatCard
-                  icon={<DollarSign className="h-5 w-5" />}
-                  label="In-State Tuition"
-                  value={formatCurrency(university.tuitionInState)}
-                />
-                <StatCard
-                  icon={<DollarSign className="h-5 w-5" />}
-                  label="Out-of-State Tuition"
-                  value={formatCurrency(university.tuitionOutState)}
-                />
-                <StatCard
-                  icon={<DollarSign className="h-5 w-5" />}
-                  label="Cost of Living"
-                  value={formatCurrency(university.costOfLiving)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/50 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calculator className="h-5 w-5" />
-                Calculate Your Net Price
+                <GraduationCap className="h-5 w-5 text-primary" /> Selectivity
               </CardTitle>
-              <CardDescription>
-                Get a personalized estimate of financial aid and your actual out-of-pocket cost
-              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center p-6 bg-muted/30 rounded-xl border">
+                <div className="text-4xl font-bold text-primary">{fmtPct(university.acceptanceRate)}</div>
+                <div className="text-sm text-muted-foreground mt-1">Acceptance Rate</div>
+              </div>
+              <StatRow label="Application Deadline" value={university.applicationDeadline ? new Date(university.applicationDeadline).toLocaleDateString() : 'N/A'} />
+              <StatRow label="Common App" value={university.commonAppAccepted ? "Accepted" : "No"} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Test Scores (25th - 75th %)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <div className="flex justify-between mb-2 text-sm font-medium">
+                  <span>SAT Math</span>
+                  <span>{university.satMath25} - {university.satMath75}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full relative">
+                  <div 
+                    className="absolute h-full bg-primary rounded-full opacity-50"
+                    style={{ left: `${((university.satMath25 || 400)-400)/12}%`, width: `${((university.satMath75 || 800)-(university.satMath25 || 400))/12}%` }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between mb-2 text-sm font-medium">
+                  <span>SAT Verbal</span>
+                  <span>{university.satVerbal25} - {university.satVerbal75}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full relative">
+                  <div 
+                    className="absolute h-full bg-secondary rounded-full opacity-50"
+                    style={{ left: `${((university.satVerbal25 || 400)-400)/12}%`, width: `${((university.satVerbal75 || 800)-(university.satVerbal25 || 400))/12}%` }}
+                  />
+                </div>
+              </div>
+              <StatRow label="Average GPA" value={university.avgGpa || 'N/A'} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* --- COSTS TAB --- */}
+        <TabsContent value="costs" className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-green-600" /> Sticker Price (Yearly)
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <Button size="lg" className="w-full sm:w-auto" onClick={onOpenCalculator}>
-                <Calculator className="h-4 w-4 mr-2" />
-                Start Financial Aid Calculator
-              </Button>
+              <StatRow label="In-State Tuition" value={fmtMoney(university.tuitionInState)} />
+              <StatRow label="Out-of-State Tuition" value={fmtMoney(university.tuitionOutState)} />
+              <StatRow label="Room & Board" value={fmtMoney(university.roomAndBoard)} />
+              <div className="mt-4 pt-4 border-t flex justify-between font-bold text-lg">
+                <span>Total (Out-of-State)</span>
+                <span>{fmtMoney((university.tuitionOutState || 0) + (university.roomAndBoard || 0))}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Financial Aid</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StatRow label="Avg Net Price" value={fmtMoney(university.averageNetPrice)} />
+              <StatRow label="Students Receiving Aid" value={fmtPct(university.percentReceivingAid)} />
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-sm text-blue-800 dark:text-blue-200">
+                💡 <strong>Tip:</strong> The "Net Price" is what average students actually pay after grants. Use our Calculator to see your personal estimate.
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* --- OUTCOMES TAB --- */}
+        <TabsContent value="outcomes" className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-primary" /> Career
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StatRow label="Graduation Rate" value={fmtPct(university.graduationRate)} />
+              <StatRow label="Avg Starting Salary" value={fmtMoney(university.averageStartingSalary)} />
             </CardContent>
           </Card>
         </TabsContent>

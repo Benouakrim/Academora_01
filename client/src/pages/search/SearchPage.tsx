@@ -8,6 +8,8 @@ import SearchFiltersComponent from '@/components/search/SearchFilters'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Link } from 'react-router-dom'
+import { useCompareStore } from '@/hooks/useCompare'
 
 function SkeletonCard() {
   return (
@@ -41,6 +43,7 @@ export default function SearchPage() {
 
   // Fetch data
   const { data: universities, isLoading } = useUniversitySearch(debouncedFilters)
+  const { selectedSlugs } = useCompareStore()
 
   // Sync filters to URL
   useEffect(() => {
@@ -55,6 +58,13 @@ export default function SearchPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Find Your University</h1>
+        {selectedSlugs.length > 0 && (
+          <Link to="/compare">
+            <Button className="bg-gradient-brand">
+              Compare ({selectedSlugs.length})
+            </Button>
+          </Link>
+        )}
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" className="md:hidden">

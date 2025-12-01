@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './styles/globals.css'
 import App from './App.tsx'
 import { ClerkProvider } from '@clerk/clerk-react'
+import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AuthProvider from '@/components/auth/AuthProvider'
 import MissingClerkKey from '@/components/auth/MissingClerkKey'
@@ -16,7 +17,9 @@ createRoot(document.getElementById('root')!).render(
       <ClerkProvider publishableKey={clerkPk}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <App />
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
           </AuthProvider>
         </QueryClientProvider>
       </ClerkProvider>

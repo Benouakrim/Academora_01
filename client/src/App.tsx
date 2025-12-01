@@ -10,6 +10,7 @@ const ProtectedRoute = lazy(() => import('@/components/auth/ProtectedRoute'));
 const LandingPage = lazy(() => import('@/pages/landing/LandingPage'));
 const SearchPage = lazy(() => import('@/pages/search/SearchPage'));
 const UniversityPage = lazy(() => import('@/pages/university/UniversityPage'));
+const ComparePage = lazy(() => import('@/pages/compare/ComparePage'));
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
 const AdminUniversitiesPage = lazy(() => import('@/pages/admin/universities/AdminUniversitiesPage'));
 const UniversityEditorPage = lazy(() => import('@/pages/admin/universities/UniversityEditorPage'));
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/" element={<RootLayout />}> 
             <Route index element={<LandingPage />} />
             <Route path="search" element={<SearchPage />} />
+            <Route path="compare" element={<ComparePage />} />
             <Route path="university/:slug" element={<UniversityPage />} />
             <Route path="sign-in" element={<SignIn routing="path" path="/sign-in" />} />
             <Route path="sign-up" element={<SignUp routing="path" path="/sign-up" />} />

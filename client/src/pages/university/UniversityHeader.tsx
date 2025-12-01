@@ -1,72 +1,66 @@
-import { ExternalLink, Heart, MapPin } from 'lucide-react'
+import { ExternalLink, MapPin, Trophy, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { UniversityDetail } from '@/hooks/useUniversityDetail'
 
-type UniversityHeaderProps = {
-  university: UniversityDetail
-}
-
-export default function UniversityHeader({ university }: UniversityHeaderProps) {
+export default function UniversityHeader({ university }: { university: UniversityDetail }) {
   const location = [university.city, university.state, university.country].filter(Boolean).join(', ')
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Hero Image with Gradient Overlay */}
-      <div className="relative h-64 sm:h-80 bg-gradient-to-br from-primary/20 to-secondary/20">
-        {university.logoUrl && (
-          <div className="absolute inset-0 opacity-10">
-            <img
-              src={university.logoUrl}
-              alt={university.name}
-              className="w-full h-full object-cover blur-sm"
-            />
-          </div>
-        )}
+    <div className="relative h-[400px] w-full overflow-hidden">
+      {/* Hero Background */}
+      <div className="absolute inset-0">
+        <img
+          src={university.heroImageUrl || '/placeholder-campus.jpg'}
+          alt={university.name}
+          className="w-full h-full object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
       </div>
 
       {/* Content */}
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="relative -mt-16 sm:-mt-20 flex flex-col sm:flex-row items-start sm:items-end gap-4 pb-6">
-          {/* Logo */}
-          {university.logoUrl && (
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl bg-background border-4 border-background shadow-lg overflow-hidden flex-shrink-0">
-              <img
-                src={university.logoUrl}
-                alt={`${university.name} logo`}
-                className="w-full h-full object-contain p-2"
-              />
-            </div>
-          )}
-
-          {/* Title and Actions */}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{university.name}</h1>
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              <Badge variant="outline" className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {location}
-              </Badge>
-              {university.ranking && (
-                <Badge variant="secondary">Ranked #{university.ranking}</Badge>
+      <div className="absolute inset-0 flex items-end">
+        <div className="mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 pb-8">
+          <div className="flex flex-col md:flex-row items-end gap-6">
+            {/* Logo Card */}
+            <div className="h-32 w-32 rounded-xl bg-white shadow-xl p-4 flex items-center justify-center -mb-4 md:mb-0 relative z-10">
+              {university.logoUrl ? (
+                <img src={university.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+              ) : (
+                <Building2 className="h-12 w-12 text-muted-foreground" />
               )}
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 self-start sm:self-end">
-            <Button variant="outline" size="icon" aria-label="Save to list">
-              <Heart className="h-4 w-4" />
-            </Button>
-            {university.websiteUrl && (
-              <a href={university.websiteUrl} target="_blank" rel="noopener noreferrer">
-                <Button>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Visit Website
-                </Button>
-              </a>
-            )}
+            {/* Text Info */}
+            <div className="flex-1 text-white mb-2">
+              <div className="flex flex-wrap gap-2 mb-3">
+                {university.ranking && (
+                  <Badge variant="secondary" className="bg-amber-400 text-black hover:bg-amber-500">
+                    <Trophy className="h-3 w-3 mr-1" /> #{university.ranking} National
+                  </Badge>
+                )}
+                {university.type && <Badge variant="outline" className="border-white/40 text-white bg-black/20">{university.type}</Badge>}
+                {university.setting && <Badge variant="outline" className="border-white/40 text-white bg-black/20">{university.setting}</Badge>}
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 text-shadow-sm">
+                {university.name}
+              </h1>
+              <div className="flex items-center gap-2 text-white/90 text-lg">
+                <MapPin className="h-5 w-5" />
+                {location}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mb-2">
+              {university.websiteUrl && (
+                <a href={university.websiteUrl} target="_blank" rel="noopener noreferrer">
+                  <Button variant="secondary">
+                    Visit Website <ExternalLink className="h-4 w-4 ml-2" />
+                  </Button>
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>

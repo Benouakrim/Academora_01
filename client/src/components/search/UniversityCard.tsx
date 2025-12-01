@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { University } from '@/hooks/useUniversitySearch'
+import { useCompareStore } from '@/hooks/useCompare'
 
 type UniversityCardProps = {
   university: University
@@ -12,6 +13,9 @@ type UniversityCardProps = {
 export default function UniversityCard({ university }: UniversityCardProps) {
   const tuition = university.tuitionOutState || university.tuitionInState
   const location = [university.city, university.state, university.country].filter(Boolean).join(', ')
+  const { selectedSlugs, addUniversity } = useCompareStore()
+  const isSelected = selectedSlugs.includes(university.slug)
+  const canAddMore = selectedSlugs.length < 3
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -42,11 +46,21 @@ export default function UniversityCard({ university }: UniversityCardProps) {
           ) : (
             <Badge variant="outline">N/A</Badge>
           )}
-          <Link to={`/university/${university.slug}`}>
-            <Button size="sm" variant="outline">
-              View Details
+          <div className="flex items-center gap-2">
+            <Link to={`/university/${university.slug}`}>
+              <Button size="sm" variant="outline">
+                View Details
+              </Button>
+            </Link>
+            <Button
+              size="sm"
+              disabled={isSelected || !canAddMore}
+              onClick={() => addUniversity(university.slug)}
+              className={isSelected ? 'opacity-60' : 'bg-gradient-brand text-white border-0'}
+            >
+              {isSelected ? 'Added' : 'Add to Compare'}
             </Button>
-          </Link>
+          </div>
         </div>
       </CardContent>
     </Card>
