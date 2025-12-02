@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { GraduationCap, DollarSign, Users, Briefcase } from 'lucide-react'
 import type { UniversityDetail } from '@/hooks/useUniversityDetail'
+import ReviewList from '@/components/reviews/ReviewList'
 
 // Helper for formatting currency
 const fmtMoney = (val: number | null) => val ? `$${val.toLocaleString()}` : 'N/A'
@@ -26,6 +27,7 @@ export default function UniversityTabs({ university }: { university: UniversityD
           <TabsTrigger value="admissions" className="h-10 px-6">Admissions</TabsTrigger>
           <TabsTrigger value="costs" className="h-10 px-6">Costs & Aid</TabsTrigger>
           <TabsTrigger value="outcomes" className="h-10 px-6">Outcomes</TabsTrigger>
+          <TabsTrigger value="reviews" className="h-10 px-6">Reviews</TabsTrigger>
         </TabsList>
 
         {/* --- OVERVIEW TAB --- */}
@@ -175,6 +177,11 @@ export default function UniversityTabs({ university }: { university: UniversityD
               <StatRow label="Avg Starting Salary" value={fmtMoney(university.averageStartingSalary)} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* --- REVIEWS TAB --- */}
+        <TabsContent value="reviews">
+          <ReviewList universityId={university.id} />
         </TabsContent>
       </Tabs>
     </div>
