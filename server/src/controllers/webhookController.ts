@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Webhook } from 'svix';
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../utils/AppError';
+import { EmailService } from '../services/EmailService';
 
 const prisma = new PrismaClient();
 
@@ -68,6 +69,10 @@ export const handleClerkWebhook = async (req: Request, res: Response, next: Next
           await prisma.user.update({ where: { clerkId }, data: updateData });
         } else if (email) {
           await prisma.user.create({ data: { clerkId, email, firstName, lastName, avatarUrl } });
+          
+          // Send welcome email (fire and forget to avoid blocking webhook response)
+          EmailService.sendWelcomeEmail(email, firstName || 'Student')
+            .catch(e => console.error('Webhook email error:', e));
         } else {
           // No email and no existing record — acknowledge without DB write
           console.warn('[Clerk webhook] No email provided; skipped user upsert for', clerkId);

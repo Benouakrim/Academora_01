@@ -13,7 +13,6 @@ export default function EditorToolbar({ editor }: Props) {
   return (
     <div className="border-b bg-muted/40 p-2 flex flex-wrap gap-1 sticky top-0 z-10 backdrop-blur-sm">
       <Toggle
-        size="sm"
         pressed={editor.isActive('bold')}
         onPressedChange={() => editor.chain().focus().toggleBold().run()}
         aria-label="Toggle bold"
@@ -22,7 +21,6 @@ export default function EditorToolbar({ editor }: Props) {
       </Toggle>
       
       <Toggle
-        size="sm"
         pressed={editor.isActive('italic')}
         onPressedChange={() => editor.chain().focus().toggleItalic().run()}
         aria-label="Toggle italic"
@@ -33,7 +31,6 @@ export default function EditorToolbar({ editor }: Props) {
       <div className="w-px h-6 bg-border mx-1" />
 
       <Toggle
-        size="sm"
         pressed={editor.isActive('heading', { level: 2 })}
         onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         aria-label="Toggle h2"
@@ -42,7 +39,6 @@ export default function EditorToolbar({ editor }: Props) {
       </Toggle>
 
       <Toggle
-        size="sm"
         pressed={editor.isActive('bulletList')}
         onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
         aria-label="Toggle bullet list"
@@ -51,7 +47,6 @@ export default function EditorToolbar({ editor }: Props) {
       </Toggle>
 
       <Toggle
-        size="sm"
         pressed={editor.isActive('orderedList')}
         onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
         aria-label="Toggle ordered list"
@@ -60,7 +55,6 @@ export default function EditorToolbar({ editor }: Props) {
       </Toggle>
 
       <Toggle
-        size="sm"
         pressed={editor.isActive('blockquote')}
         onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
         aria-label="Toggle quote"

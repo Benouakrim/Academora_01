@@ -18,6 +18,7 @@ const env = cleanEnv(process.env, {
   CLERK_PUBLISHABLE_KEY: str({ desc: 'Clerk publishable key', default: '' }),
   CLERK_SECRET_KEY: str({ desc: 'Clerk secret key', default: '' }),
   CLERK_WEBHOOK_SECRET: str({ desc: 'Clerk webhook signing secret', default: '' }),
+  RESEND_API_KEY: str({ desc: 'Resend API Key for emails', default: '' }),
 });
 
 const app = express();

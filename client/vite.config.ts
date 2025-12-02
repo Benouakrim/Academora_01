@@ -4,7 +4,19 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      babel: {
+        plugins: [
+          ['babel-plugin-react-compiler', {
+            // Disable React Compiler for components that use TanStack Table
+            // to avoid "use no memo" warnings
+            compilationMode: 'annotation',
+          }]
+        ]
+      }
+    })
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

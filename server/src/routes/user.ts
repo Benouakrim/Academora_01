@@ -12,5 +12,6 @@ router.use(requireAuth);
 router.get('/profile', controller.getProfile);
 router.patch('/profile', validate(updateProfileSchema), controller.updateProfile);
 router.post('/saved/:id', validate(toggleSavedSchema), controller.toggleSaved);
+router.get('/dashboard', controller.getUserDashboard);
 
 export default router;

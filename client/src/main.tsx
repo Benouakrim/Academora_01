@@ -1,31 +1,44 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './styles/globals.css'
-import App from './App'
 import { ClerkProvider } from '@clerk/clerk-react'
-import { HelmetProvider } from 'react-helmet-async'
-import ErrorBoundary from '@/components/common/ErrorBoundary'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { HelmetProvider } from 'react-helmet-async'
 import AuthProvider from '@/components/auth/AuthProvider'
 import MissingClerkKey from '@/components/auth/MissingClerkKey'
+import App from './App.tsx'
+import './styles/globals.css'
 
-const clerkPk = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
-const queryClient = new QueryClient()
+// Environment check
+const clerkPk = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+
+// Production-ready Query Client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Data remains "fresh" for 5 minutes (no refetching)
+      staleTime: 1000 * 60 * 5, 
+      // Cache remains in memory for 30 minutes
+      gcTime: 1000 * 60 * 30,
+      // Disable auto-refetch on window focus for better UX
+      refetchOnWindowFocus: false,
+      // Retry failed requests twice
+      retry: 2,
+    },
+  },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {clerkPk ? (
-      <HelmetProvider>
-        <ClerkProvider publishableKey={clerkPk}>
-          <QueryClientProvider client={queryClient}>
+      <ClerkProvider publishableKey={clerkPk}>
+        <QueryClientProvider client={queryClient}>
+          <HelmetProvider>
             <AuthProvider>
-              <ErrorBoundary>
-                <App />
-              </ErrorBoundary>
+              <App />
             </AuthProvider>
-          </QueryClientProvider>
-        </ClerkProvider>
-      </HelmetProvider>
+          </HelmetProvider>
+        </QueryClientProvider>
+      </ClerkProvider>
     ) : (
       <MissingClerkKey />
     )}

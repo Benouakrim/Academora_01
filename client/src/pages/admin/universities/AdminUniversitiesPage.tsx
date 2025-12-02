@@ -5,6 +5,16 @@ import type { University } from '@/hooks/useAdminUniversities'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import type { ColumnDef } from '@tanstack/react-table'
+import { DataTable } from '@/components/ui/data-table'
+import { MoreHorizontal, ArrowUpDown } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export default function AdminUniversitiesPage() {
   const [page, setPage] = useState(1)
@@ -17,6 +27,62 @@ export default function AdminUniversitiesPage() {
   const total = data?.meta?.total ?? universities.length
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
+  const columns: ColumnDef<University>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <Link to={`/admin/universities/${row.original.id}`} className="font-medium hover:underline">
+          {row.getValue('name') as string}
+        </Link>
+      ),
+    },
+    { accessorKey: 'country', header: 'Country' },
+    { accessorKey: 'city', header: 'City' },
+    {
+      accessorKey: 'tuitionOutState',
+      header: 'Tuition',
+      cell: ({ row }) => {
+        const amount = Number(row.getValue('tuitionOutState')) || 0
+        const formatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+        return <div className="font-medium">{formatted}</div>
+      },
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const uni = row.original
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <Link to={`/admin/universities/${uni.id}`}>
+                <DropdownMenuItem>Edit Details</DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => setDeletingId(uni.id)}
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -26,49 +92,15 @@ export default function AdminUniversitiesPage() {
         </Link>
       </div>
 
-      <div className="rounded-lg border bg-white overflow-x-auto">
-        <table className="min-w-full text-left">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Country</th>
-              <th className="px-4 py-3">City</th>
-              <th className="px-4 py-3">Tuition (Out)</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              [...Array(5)].map((_, i) => (
-                <tr key={i}>
-                  <td className="px-4 py-3"><Skeleton className="h-5 w-48" /></td>
-                  <td className="px-4 py-3"><Skeleton className="h-5 w-24" /></td>
-                  <td className="px-4 py-3"><Skeleton className="h-5 w-24" /></td>
-                  <td className="px-4 py-3"><Skeleton className="h-5 w-24" /></td>
-                  <td className="px-4 py-3"><Skeleton className="h-8 w-32" /></td>
-                </tr>
-              ))
-            ) : (
-              universities.map((u: University) => (
-                <tr key={u.id} className="border-t">
-                  <td className="px-4 py-3 font-medium">
-                    <Link to={`/admin/universities/${u.id}`} className="hover:underline">{u.name}</Link>
-                  </td>
-                  <td className="px-4 py-3">{u.country}</td>
-                  <td className="px-4 py-3">{u.city ?? '-'}</td>
-                  <td className="px-4 py-3">{u.tuitionOutState ?? '-'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <Link to={`/admin/universities/${u.id}`} className="rounded-md px-3 py-1.5 bg-slate-900 text-white hover:bg-slate-800">Edit</Link>
-                      <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => setDeletingId(u.id)}>Delete</Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : (
+        <DataTable columns={columns} data={universities} />
+      )}
 
       <div className="flex items-center justify-between">
         <Button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
@@ -84,17 +116,11 @@ export default function AdminUniversitiesPage() {
           <p className="text-slate-600">This action cannot be undone.</p>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeletingId(null)}>Cancel</Button>
-            <Button
-              variant="outline"
-              className="text-red-600 border-red-300 hover:bg-red-50"
-              onClick={async () => {
-                if (!deletingId) return
-                await del.mutateAsync(deletingId)
-                setDeletingId(null)
-              }}
-            >
-              Delete
-            </Button>
+            <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={async () => {
+              if (!deletingId) return
+              await del.mutateAsync(deletingId)
+              setDeletingId(null)
+            }}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

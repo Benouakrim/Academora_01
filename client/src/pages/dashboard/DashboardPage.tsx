@@ -1,29 +1,42 @@
-import { useEffect } from 'react'
-import { useAuth } from '@clerk/clerk-react'
 import WelcomeHeader from './components/WelcomeHeader'
-import StatsCards from './components/StatsCards'
 import RecommendedWidget from './components/RecommendedWidget'
-import { useUserStore } from '@/store/useUserStore'
+import ActivityFeed from '@/components/dashboard/ActivityFeed'
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/api'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function DashboardPage() {
-  const { profile, isLoading, error, fetchProfile } = useUserStore()
-  const { isSignedIn } = useAuth()
-
-  useEffect(() => {
-    if (isSignedIn && !profile && !isLoading && !error) {
-      fetchProfile()
+  const { data, isLoading } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: async () => {
+      const res = await api.get('/user/dashboard')
+      return res.data
     }
-  }, [isSignedIn, profile, isLoading, error, fetchProfile])
+  })
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <WelcomeHeader />
-      <StatsCards />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <RecommendedWidget />
-        {/* Reserved for next widgets: Recent Activity, Checklist, etc. */}
-        <div className="border rounded-lg p-6 bg-card text-muted-foreground">
-          More tools coming soon...
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+        </div>
+      ) : data ? (
+        <ActivityFeed data={data} />
+      ) : null}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <RecommendedWidget />
+        </div>
+        <div className="space-y-6">
+          <div className="rounded-xl border bg-card p-6">
+            <h3 className="font-semibold mb-2">Next Steps</h3>
+            <p className="text-sm text-muted-foreground">Complete your profile to get better recommendations.</p>
+          </div>
         </div>
       </div>
     </div>
