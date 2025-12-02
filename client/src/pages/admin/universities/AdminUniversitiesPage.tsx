@@ -60,7 +60,7 @@ export default function AdminUniversitiesPage() {
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <Link to={`/admin/universities/${u.id}`} className="rounded-md px-3 py-1.5 bg-slate-900 text-white hover:bg-slate-800">Edit</Link>
-                      <Button variant="destructive" onClick={() => setDeletingId(u.id)}>Delete</Button>
+                      <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={() => setDeletingId(u.id)}>Delete</Button>
                     </div>
                   </td>
                 </tr>
@@ -85,7 +85,8 @@ export default function AdminUniversitiesPage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeletingId(null)}>Cancel</Button>
             <Button
-              variant="destructive"
+              variant="outline"
+              className="text-red-600 border-red-300 hover:bg-red-50"
               onClick={async () => {
                 if (!deletingId) return
                 await del.mutateAsync(deletingId)

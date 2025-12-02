@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { create, all } from 'mathjs';
 import { AppError } from '../utils/AppError';
 
 const prisma = new PrismaClient();
+const math = create(all, { number: 'BigNumber', precision: 64 });
 
 export interface FinancialAidInput {
   universityId: string;
@@ -12,12 +14,15 @@ export interface FinancialAidInput {
 }
 
 export interface FinancialAidResult {
-  grossTuition: number;
+  tuition: number;
+  housing: number;
+  grossCost: number;
   efc: number;
   needAid: number;
   meritAid: number;
   totalAid: number;
-  netCost: number;
+  netPrice: number;
+  breakdown: string;
 }
 
 export class FinancialAidService {
@@ -27,37 +32,69 @@ export class FinancialAidService {
     const university = await prisma.university.findUnique({ where: { id: universityId } });
     if (!university) throw new AppError(404, 'University not found');
 
-    const grossTuition = (inState ? university.tuitionInState : university.tuitionOutState) || 50000;
+    // --- 1. Define Variables for MathJS ---
+    const scope = {
+      income: familyIncome,
+      gpa: gpa,
+      sat: satScore || 0,
+      tuition: inState ? (university.tuitionInState || 50000) : (university.tuitionOutState || 50000),
+      housing: (university.roomAndBoard || 0) + (university.costOfLiving || 0),
+      avgGrant: university.averageGrantAid || 15000,
+      percentMet: university.percentReceivingAid || 0.6,
+      uniAvgGpa: university.avgGpa || 3.5,
+      uniAvgSat: university.avgSatScore || 1200
+    };
 
-    // --- EFC Calculation ---
-    let efc: number;
-    if (familyIncome <= 30000) {
-      efc = 0;
-    } else if (familyIncome <= 50000) {
-      efc = (familyIncome - 30000) * 0.2 + 1500; // 20% of amount over 30k + base 1500
-    } else if (familyIncome <= 100000) {
-      efc = (familyIncome - 50000) * 0.3 + 5500; // 30% over 50k + base 5500
-    } else {
-      efc = (familyIncome - 100000) * 0.4 + 20500; // 40% over 100k + base 20500
+    // --- 2. Calculate Gross Cost ---
+    // Formula: Tuition + Housing
+    const grossCost = math.evaluate('tuition + housing', scope);
+
+    // --- 3. Calculate EFC (Simplified Federal Model) ---
+    // Using mathjs expressions for clean logic
+    let efcFormula = '0';
+    if (familyIncome > 90000) {
+      efcFormula = '17100 + (income - 90000) * 0.47';
+    } else if (familyIncome > 60000) {
+      efcFormula = '6600 + (income - 60000) * 0.35';
+    } else if (familyIncome > 30000) {
+      efcFormula = '(income - 30000) * 0.22';
     }
+    
+    const efcRaw = math.evaluate(efcFormula, scope);
+    // EFC cannot exceed Gross Cost
+    const efc = math.min(efcRaw, grossCost);
 
-    // --- Need-Based Aid ---
-    const demonstratedNeed = Math.max(0, grossTuition - efc);
-    const needAid = demonstratedNeed * 0.6; // Assume schools meet 60% of need
+    // --- 4. Calculate Need-Based Aid ---
+    // Need = Gross - EFC. Aid = Need * % Met by Uni
+    const needRaw = math.max(0, math.subtract(grossCost, efc));
+    const needAid = math.multiply(needRaw, scope.percentMet);
 
-    // --- Merit-Based Aid ---
-    const gpaScore = (gpa / 4) * 50; // Max 50 pts
-    const satComponent = satScore ? (satScore / 1600) * 50 : 25; // Max 50 pts, default 25 if missing
-    const meritScore = gpaScore + satComponent; // 0 - 100
-    let meritAid = grossTuition * (meritScore / 200); // Divide by 200 so 100 score => 50% tuition
-    const meritCap = grossTuition * 0.5;
-    if (meritAid > meritCap) meritAid = meritCap;
+    // --- 5. Calculate Merit-Based Aid ---
+    // Merit Multiplier: 1.0 (Average) + 0.2 for GPA match + 0.2 for SAT match
+    let meritMultiplier = 1.0;
+    if (gpa >= scope.uniAvgGpa) meritMultiplier += 0.2;
+    if (scope.sat >= scope.uniAvgSat) meritMultiplier += 0.2;
 
-    // --- Total Aid & Net Cost ---
-    let totalAid = needAid + meritAid;
-    if (totalAid > grossTuition) totalAid = grossTuition; // Cap at tuition
-    const netCost = grossTuition - totalAid;
+    // Merit = (Average Grant * 0.5) * Multiplier
+    const baseMerit = math.multiply(scope.avgGrant, 0.5);
+    const meritAid = math.multiply(baseMerit, meritMultiplier);
 
-    return { grossTuition, efc, needAid, meritAid, totalAid, netCost };
+    // --- 6. Final Totals ---
+    // Total Aid = Need + Merit (Capped at Gross Cost)
+    const totalAidRaw = math.add(needAid, meritAid);
+    const totalAid = math.min(totalAidRaw, grossCost);
+    const netPrice = math.subtract(grossCost, totalAid);
+
+    return {
+      tuition: Number(scope.tuition),
+      housing: Number(scope.housing),
+      grossCost: Number(grossCost),
+      efc: Number(efc),
+      needAid: Number(needAid),
+      meritAid: Number(meritAid),
+      totalAid: Number(totalAid),
+      netPrice: Number(netPrice),
+      breakdown: `Estimated using Federal Methodology. EFC: $${Math.round(Number(efc))}`
+    };
   }
 }

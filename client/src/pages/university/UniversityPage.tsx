@@ -70,7 +70,10 @@ export default function UniversityPage() {
   return (
     <div>
       <UniversityHeader university={university} />
-      <UniversityTabs university={university} onOpenCalculator={() => setCalculatorOpen(true)} />
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 mt-4 flex justify-end">
+        <Button variant="outline" onClick={() => setCalculatorOpen(true)}>Calculate Your Net Price</Button>
+      </div>
+      <UniversityTabs university={university} />
       <FinancialAidDialog
         universityId={university.id}
         isOpen={isCalculatorOpen}

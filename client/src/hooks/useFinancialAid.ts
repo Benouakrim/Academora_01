@@ -10,18 +10,29 @@ export interface PredictCostPayload {
 }
 
 export interface PredictCostResult {
-  netPrice: number;
-  stickerPrice: number;
-  meritAid: number;
-  needAid: number;
+  tuition: number;
+  housing: number;
+  grossCost: number;
   efc: number;
+  needAid: number;
+  meritAid: number;
+  totalAid: number;
+  netPrice: number;
+  breakdown: string;
 }
 
 export function useFinancialAid() {
   const mutation = useMutation<PredictCostResult, Error, PredictCostPayload>({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/aid/predict', payload);
-      return data;
+      const body = {
+        universityId: payload.universityId,
+        familyIncome: payload.income,
+        gpa: payload.gpa,
+        satScore: payload.sat,
+        inState: payload.inState,
+      };
+      const { data } = await api.post('/aid/predict', body);
+      return data as PredictCostResult;
     },
   });
 

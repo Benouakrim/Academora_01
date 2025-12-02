@@ -1,4 +1,4 @@
-import React, { Component, ReactNode } from 'react'
+import { Component, type ReactNode } from 'react'
 import { logError } from '@/hooks/useErrorLogger'
 
 interface ErrorBoundaryProps {
