@@ -1,219 +1,259 @@
-import { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import api from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { AlertCircle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
-import clientPkg from '../../../package.json'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { HardHat, RefreshCw, AlertTriangle, CheckCircle, Database, Zap, Cpu } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'sonner'
+import api from '@/lib/api'
 
-type SyncStatus = {
-  healthy: boolean;
-  missingInNeon: number;
-  missingInClerk: number;
-  roleMismatches: number;
-  sample: Array<{
-    clerkId: string;
-    neonUser?: any;
-    clerkUser?: any;
-    issue?: string;
-  }>;
-};
+interface CacheStats {
+  type: string
+  size: number
+  expired: number
+  hitRate: number
+  missRate: number
+  isReady: boolean
+}
 
-export default function AdminHealthPage() {
-  const deps = clientPkg.dependencies || {}
-  const reactVersion = deps.react
-  const rechartsVersion = deps.recharts
-  const clerkVersion = deps['@clerk/clerk-react']
-  const mismatches: string[] = []
+interface SyncStatus {
+  healthy: boolean
+  missingInNeon: number
+  missingInClerk: number
+  roleMismatches: number
+  sample: Array<{ clerkId: string; neonUser?: { email: string; role?: string }; clerkUser?: { email?: string; role?: string }; issue?: string }>
+}
 
-  // Simple heuristic checks
-  if (reactVersion && reactVersion.startsWith('19')) {
-    mismatches.push('React 19 detected; some libs may expect React 18.')
-  }
-  if (!deps['react-is']) {
-    mismatches.push('react-is not explicitly installed (may cause chart issues).')
-  }
+// --- 1. HOOKS ---
 
-  const [syncStatusData, setSyncStatusData] = useState<SyncStatus | null>(null);
-  const [cleanupOrphaned, setCleanupOrphaned] = useState(false);
-
-  // Fetch sync status
-  const { refetch: checkSyncStatus, isFetching: isCheckingSync } = useQuery({
-    queryKey: ['admin-sync-status'],
+function useCacheStats() {
+  return useQuery<CacheStats>({
+    queryKey: ['adminHealthCache'],
     queryFn: async () => {
-      const res = await api.get('/admin/sync-status');
-      setSyncStatusData(res.data.data);
-      return res.data.data;
+      const { data } = await api.get('/admin/health/cache')
+      return data.data
     },
-    enabled: false,
-  });
+    refetchInterval: 15000, // Refresh every 15 seconds
+  })
+}
 
-  // Reconcile mutation
-  const reconcileMutation = useMutation({
+function useSyncStatus() {
+  return useQuery<SyncStatus>({
+    queryKey: ['adminHealthSync'],
+    queryFn: async () => {
+      const { data } = await api.get('/admin/health/sync-status')
+      return data.data
+    },
+    staleTime: 1000 * 60, // 1 minute
+  })
+}
+
+function useCacheClearer() {
+  const queryClient = useQueryClient()
+  return useMutation({
     mutationFn: async () => {
-      const res = await api.post('/admin/reconcile', { cleanupOrphaned });
-      return res.data;
+      await api.post('/admin/health/cache/clear')
+    },
+    onSuccess: () => {
+      toast.success('Cache cleared successfully.')
+      queryClient.invalidateQueries({ queryKey: ['adminHealthCache'] })
+    },
+    onError: () => {
+      toast.error('Failed to clear cache.')
+    },
+  })
+}
+
+function useReconciler() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/admin/health/reconcile')
+      return data.data
     },
     onSuccess: (data) => {
-      const result = data.data;
-      const message = `Reconciliation complete! Created: ${result.created}, Updated: ${result.updated}${result.rolesSynced ? `, Roles Synced: ${result.rolesSynced}` : ''}${result.deleted ? `, Deleted: ${result.deleted}` : ''}`;
-      toast.success(message);
-      // Refetch sync status after reconciliation
-      setTimeout(() => {
-        checkSyncStatus();
-      }, 1000);
+      toast.success('Reconciliation started.', {
+        description: `Created: ${data.created}, Updated: ${data.updated}. Check status shortly.`,
+      })
+      queryClient.invalidateQueries({ queryKey: ['adminHealthSync'] })
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Reconciliation failed');
+    onError: () => {
+      toast.error('Failed to start reconciliation.')
     },
-  });
+  })
+}
+
+// --- 2. COMPONENTS ---
+
+// Mock function for CPU/Memory (Real implementation requires server-side OS module access)
+const getMockSystemStats = () => ({
+    cpuUsage: Math.floor(Math.random() * (15 - 3) + 3), // 3% to 15%
+    memoryUsage: Math.floor(Math.random() * (60 - 30) + 30), // 30% to 60%
+    uptime: Math.floor(Math.random() * 8 + 1) // 1 to 8 days
+})
+
+function SystemStatsCard() {
+    const stats = getMockSystemStats();
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Cpu className="h-4 w-4 text-secondary" /> System Load
+                </CardTitle>
+                <Badge variant="outline">Mock Data</Badge>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                <div className="text-2xl font-bold">{stats.cpuUsage}% <span className="text-base text-muted-foreground font-normal">CPU</span></div>
+                <div className="text-lg font-semibold">{stats.memoryUsage}% <span className="text-sm text-muted-foreground font-normal">RAM</span></div>
+                <p className="text-xs text-muted-foreground">Uptime: {stats.uptime} days</p>
+            </CardContent>
+        </Card>
+    )
+}
+
+function CacheCard() {
+  const { data, isLoading, refetch } = useCacheStats()
+  const { mutate, isPending } = useCacheClearer()
+
+  if (isLoading) return <Skeleton className="h-[250px] w-full" />
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold">System Health</h2>
-        <p className="text-slate-600">Operational overview and status checks.</p>
-      </div>
-
-      {mismatches.length > 0 && (
-        <div className="rounded border border-amber-300 bg-amber-50 p-4">
-          <h3 className="font-semibold text-amber-800">Version Warnings</h3>
-          <ul className="mt-2 list-disc pl-5 text-sm text-amber-900">
-            {mismatches.map(m => (
-              <li key={m}>{m}</li>
-            ))}
-          </ul>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-xl flex items-center gap-2">
+            <Zap className="h-5 w-5 text-yellow-500" /> Cache Management ({data?.type})
+        </CardTitle>
+        <CardDescription>
+            Current cache type: {data?.type || 'N/A'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex flex-col">
+            <span className="text-muted-foreground">Entries</span>
+            <span className="font-bold">{data?.size.toLocaleString() || 'N/A'}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-muted-foreground">Expired</span>
+            <span className="font-bold">{data?.expired.toLocaleString() || 'N/A'}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-muted-foreground">Status</span>
+            <Badge variant={data?.isReady ? 'success' : 'destructive'}>
+                {data?.isReady ? 'Online' : 'Offline'}
+            </Badge>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-muted-foreground">Hit Rate</span>
+            <span className="font-bold">{data?.hitRate || 0}%</span>
+          </div>
         </div>
-      )}
+        
+        <div className="flex gap-2 pt-2">
+            <Button onClick={() => mutate()} disabled={isPending || !data?.isReady} variant="destructive" size="sm">
+                {isPending ? 'Clearing...' : 'Clear Cache'}
+            </Button>
+            <Button onClick={() => refetch()} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
-      {/* Data Sync Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RefreshCw className="h-5 w-5" />
-            Clerk-Neon Data Sync
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-3">
-              <Button
-                onClick={() => checkSyncStatus()}
-                disabled={isCheckingSync}
-                variant="outline"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isCheckingSync ? 'animate-spin' : ''}`} />
-                Check Sync Status
-              </Button>
-              <Button
-                onClick={() => reconcileMutation.mutate()}
-                disabled={reconcileMutation.isPending}
-                variant="default"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${reconcileMutation.isPending ? 'animate-spin' : ''}`} />
-                {reconcileMutation.isPending ? 'Reconciling...' : 'Run Reconciliation'}
-              </Button>
+function SyncStatusCard() {
+  const { data, isLoading, refetch } = useSyncStatus()
+  const { mutate, isPending } = useReconciler()
+
+  if (isLoading) return <Skeleton className="h-[250px] w-full" />
+  
+  const isSynced = data?.healthy === true
+  const icon = isSynced ? <CheckCircle className="h-5 w-5 text-green-500" /> : <AlertTriangle className="h-5 w-5 text-red-500" />
+  const statusText = isSynced ? 'Synced' : 'Inconsistent'
+
+  return (
+    <Card className={isSynced ? 'border-green-500/50' : 'border-red-500/50'}>
+      <CardHeader>
+        <CardTitle className="text-xl flex items-center gap-2">
+            <Database className="h-5 w-5 text-primary" /> DB Sync Integrity
+        </CardTitle>
+        <CardDescription>Clerk ↔ Neon consistency status</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-3">
+            {icon}
+            <span className="text-lg font-semibold">{statusText}</span>
+        </div>
+        
+        {!isSynced && (
+            <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div className="flex flex-col p-2 border rounded bg-red-50">
+                        <span className="text-xs text-muted-foreground">Missing in Neon</span>
+                        <span className="font-bold text-red-600">{data?.missingInNeon || 0}</span>
+                    </div>
+                    <div className="flex flex-col p-2 border rounded bg-red-50">
+                        <span className="text-xs text-muted-foreground">Missing in Clerk</span>
+                        <span className="font-bold text-red-600">{data?.missingInClerk || 0}</span>
+                    </div>
+                    <div className="flex flex-col p-2 border rounded bg-red-50">
+                        <span className="text-xs text-muted-foreground">Role Mismatches</span>
+                        <span className="font-bold text-red-600">{data?.roleMismatches || 0}</span>
+                    </div>
+                </div>
+                
+                {data?.sample && data.sample.length > 0 && (
+                    <div className="space-y-2 max-h-40 overflow-y-auto border p-3 rounded-md bg-red-500/10 text-sm">
+                        <p className="font-medium text-red-600">Sample Issues ({data.sample.length}):</p>
+                        {data.sample.map((item, index) => (
+                            <p key={index} className="text-xs">{item.issue}</p>
+                        ))}
+                    </div>
+                )}
+            </div>
+        )}
+
+        <div className="flex gap-2 pt-2">
+            <Button onClick={() => mutate()} disabled={isPending} variant="default" size="sm">
+                {isPending ? 'Reconciling...' : 'Trigger Reconcile'}
+            </Button>
+            <Button onClick={() => refetch()} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" /> Check Status
+            </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+
+// --- 3. MAIN PAGE ---
+
+export default function AdminHealthPage() {
+    return (
+        <div className="space-y-8">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-secondary/10 rounded-lg">
+                    <HardHat className="w-6 h-6 text-secondary" />
+                </div>
+                <div>
+                    <h1 className="text-2xl font-bold">System Health & Admin Tools</h1>
+                    <p className="text-muted-foreground text-sm">
+                        Monitor cache performance, sync status, and system metrics
+                    </p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SystemStatsCard />
+                <CacheCard />
             </div>
             
-            <div className="flex items-center space-x-2 pl-1">
-              <Checkbox 
-                id="cleanupOrphaned" 
-                checked={cleanupOrphaned}
-                onCheckedChange={(checked) => setCleanupOrphaned(checked === true)}
-              />
-              <Label 
-                htmlFor="cleanupOrphaned" 
-                className="text-sm font-normal cursor-pointer"
-              >
-                Delete orphaned users (users in Neon but not in Clerk)
-              </Label>
+            <div className="space-y-4">
+                <h2 className="text-xl font-bold border-b pb-2">Database Sync Status</h2>
+                <SyncStatusCard />
             </div>
-          </div>
-
-          {syncStatusData && (
-            <div className="space-y-3 mt-4">
-              <div className={`p-4 rounded-lg ${syncStatusData.healthy ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                <div className="flex items-center gap-2">
-                  {syncStatusData.healthy ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-red-600" />
-                  )}
-                  <h4 className={`font-semibold ${syncStatusData.healthy ? 'text-green-900' : 'text-red-900'}`}>
-                    {syncStatusData.healthy ? 'Sync Status: Healthy' : 'Sync Status: Issues Detected'}
-                  </h4>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 text-sm">
-                <div className="p-3 border rounded-lg">
-                  <div className="text-gray-500 mb-1">Missing in Neon</div>
-                  <div className="text-2xl font-bold">{syncStatusData.missingInNeon}</div>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <div className="text-gray-500 mb-1">Missing in Clerk</div>
-                  <div className="text-2xl font-bold">{syncStatusData.missingInClerk}</div>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <div className="text-gray-500 mb-1">Role Mismatches</div>
-                  <div className="text-2xl font-bold">{syncStatusData.roleMismatches}</div>
-                </div>
-              </div>
-
-              {syncStatusData.sample && syncStatusData.sample.length > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h5 className="font-semibold text-yellow-900 mb-2">Sample Issues</h5>
-                  <ul className="space-y-1 text-sm text-yellow-800">
-                    {syncStatusData.sample.slice(0, 5).map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                        <span>{item.issue || 'Data inconsistency detected'}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          <p className="text-xs text-gray-500">
-            <strong>Note:</strong> Reconciliation syncs all Clerk users to the Neon database and ensures role consistency.
-            This is a heavy operation and should be run during off-peak hours.
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-lg border bg-white p-4">
-          <h3 className="text-lg font-semibold">API</h3>
-          <p className="mt-2 text-green-700 bg-green-100 inline-block rounded px-2 py-1 text-sm">Operational</p>
         </div>
-        <div className="rounded-lg border bg-white p-4">
-          <h3 className="text-lg font-semibold">Database</h3>
-          <p className="mt-2 text-green-700 bg-green-100 inline-block rounded px-2 py-1 text-sm">Operational</p>
-        </div>
-        <div className="rounded-lg border bg-white p-4">
-          <h3 className="text-lg font-semibold">Auth (Clerk)</h3>
-          <p className="mt-2 text-green-700 bg-green-100 inline-block rounded px-2 py-1 text-sm">Operational</p>
-          <p className="mt-3 text-xs text-slate-600">Clerk v{clerkVersion}</p>
-        </div>
-        <div className="rounded-lg border bg-white p-4">
-          <h3 className="text-lg font-semibold">Background Jobs</h3>
-          <p className="mt-2 text-slate-700 bg-slate-100 inline-block rounded px-2 py-1 text-sm">No jobs configured</p>
-        </div>
-        <div className="rounded-lg border bg-white p-4 col-span-1 md:col-span-2">
-          <h3 className="text-lg font-semibold">Key Library Versions</h3>
-          <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-            <div className="rounded border p-2">React <span className="font-mono">{reactVersion}</span></div>
-            <div className="rounded border p-2">Recharts <span className="font-mono">{rechartsVersion}</span></div>
-            <div className="rounded border p-2">react-is <span className="font-mono">{deps['react-is']}</span></div>
-            <div className="rounded border p-2">Clerk <span className="font-mono">{clerkVersion}</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+    )
 }

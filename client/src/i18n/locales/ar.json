@@ -1,0 +1,21 @@
+{
+  "title_welcome": "مرحباً بكم في أكاديمورا",
+  "dashboard_overview": "نظرة عامة",
+  "button_save": "حفظ",
+  "page_not_found_title": "الصفحة غير موجودة",
+  "page_not_found_message": "الصفحة التي تبحث عنها غير موجودة.",
+  "button_go_back": "رجوع",
+  "last_updated": "آخر تحديث",
+  "dashboard_recent_activity": "النشاط الأخير",
+  "dashboard_recommended": "موصى به",
+  "dashboard_next_steps": "الخطوات التالية",
+  "button_explore": "استكشف",
+  "button_launch_matching_engine": "تشغيل محرك المطابقة",
+  "button_compare_schools": "مقارنة المدارس",
+  "button_update_profile": "تحديث الملف الشخصي",
+  "greeting_morning": "صباح الخير",
+  "greeting_afternoon": "مساء الخير",
+  "greeting_evening": "مساء الخير",
+  "student": "طالب",
+  "dashboard_welcome_message": "مرحبًا بك في مركز التحكم الخاص بك. تتبع طلباتك، قارن الجامعات، وخطط لمستقبلك."
+}

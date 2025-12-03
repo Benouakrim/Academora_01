@@ -17,7 +17,12 @@ export class UniversityService {
       return cached;
     }
     
-    const { q, country, maxTuition, minGpa, climateZone, setting, minSafetyRating, minPartySceneRating, page = 1, pageSize = 20 } = filters;
+    const { 
+      q, country, maxTuition, minGpa, climateZone, setting, minSafetyRating, minPartySceneRating,
+      minAcceptanceRate, minAvgSat, requiredIelts, // NEW FILTERS
+      page = 1, pageSize = 20 
+    } = filters;
+    
     const where: Prisma.UniversityWhereInput = {};
 
     if (q) {
@@ -48,21 +53,48 @@ export class UniversityService {
     if (minPartySceneRating) {
       where.partySceneRating = { gte: Number(minPartySceneRating) };
     }
+    
+    // --- NEW FILTER LOGIC ---
+    if (minAcceptanceRate) {
+        // Find schools with acceptance rate <= requested maximum (note the filter name is minAcceptanceRate, meaning highest accepted rate)
+        where.acceptanceRate = { lte: Number(minAcceptanceRate) };
+    }
+    if (minAvgSat) {
+        // Find schools where AVG SAT is greater than or equal to the minimum requested
+        where.avgSatScore = { gte: Number(minAvgSat) };
+    }
+    if (requiredIelts) {
+        // Query JSONB field: internationalEngReqs -> ielts value
+        // The query is complex for relational DBs and should be benchmarked.
+        // Prisma documentation suggests JSON filtering can be done as follows:
+        where.internationalEngReqs = {
+            path: ['ielts'],
+            // Find records where internationalEngReqs.ielts >= requiredIelts (as a number)
+            gte: Number(requiredIelts)
+        } as any;
+    }
+    // --- END NEW FILTER LOGIC ---
 
     const take = Number(pageSize);
     const skip = (Number(page) - 1) * take;
 
-    const [data, total] = await Promise.all([
+    const [articles, total] = await Promise.all([
       prisma.university.findMany({
         where,
         skip,
         take,
         orderBy: { name: 'asc' },
+        // Select only necessary fields for the search card
+        select: {
+          id: true, slug: true, name: true, city: true, state: true, country: true, 
+          logoUrl: true, heroImageUrl: true, acceptanceRate: true, tuitionOutState: true, 
+          tuitionInternational: true, studentLifeScore: true, rankings: true,
+        }
       }),
       prisma.university.count({ where })
     ]);
 
-    const result = { data, meta: { total, page, pageSize } };
+    const result = { data: articles, meta: { total, page, pageSize } };
     
     // Cache with short TTL (1 minute) since search results aggregate many data points
     cache.set(cacheKey, result, cache.TTL_SHORT);

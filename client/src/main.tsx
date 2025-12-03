@@ -7,6 +7,7 @@ import AuthProvider from '@/components/auth/AuthProvider'
 import MissingClerkKey from '@/components/auth/MissingClerkKey'
 import App from './App.tsx'
 import './styles/globals.css'
+import './i18n/i18n.ts'
 
 // Environment check
 const clerkPk = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY

@@ -7,6 +7,7 @@ import { cleanEnv, port, str } from 'envalid';
 import router from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import { clerkAuth } from './middleware/requireAuth';
+import { Cache } from './lib/cache';
 
 // Load environment variables
 dotenv.config();
@@ -66,9 +67,23 @@ app.use('/api', router);
 // Global error handler (must be after all routes)
 app.use(errorHandler);
 
-// Start server
-app.listen(env.PORT, () => {
-  console.log(`🚀 Server is running on port ${env.PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`[Clerk] Webhook secret configured: ${process.env.CLERK_WEBHOOK_SECRET ? 'yes' : 'no'}`);
-});
+// Initialize cache before starting server
+async function startServer() {
+  try {
+    // Initialize cache adapter
+    await Cache.connect();
+    
+    // Start server
+    app.listen(env.PORT, () => {
+      console.log(`🚀 Server is running on port ${env.PORT}`);
+      console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`[Clerk] Webhook secret configured: ${process.env.CLERK_WEBHOOK_SECRET ? 'yes' : 'no'}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the application
+startServer();

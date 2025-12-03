@@ -157,3 +157,16 @@
     @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 shadow-xl;
   }
 }
+
+/* ========================================
+ * ACCESSIBILITY: HIGH CONTRAST MODE
+ * ======================================== */
+.high-contrast {
+  filter: contrast(150%) brightness(110%);
+}
+
+/* Override any specific elements that shouldn't be filtered, like images or videos */
+.high-contrast img, 
+.high-contrast video {
+  filter: none;
+}

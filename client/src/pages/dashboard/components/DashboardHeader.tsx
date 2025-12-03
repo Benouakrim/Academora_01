@@ -1,12 +1,25 @@
 import { useUser } from '@clerk/clerk-react'
 import { motion } from 'framer-motion'
 import AnimatedBackground from '@/components/ui/animated-background'
+import { useTranslation } from 'react-i18next'
 
 export default function DashboardHeader() {
   const { user } = useUser()
-  const firstName = user?.firstName || 'Student'
+  const { t } = useTranslation()
+  
+  const firstName = user?.firstName || t('student')
   const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  
+  let greetingKey: string;
+  if (hour < 12) {
+    greetingKey = 'greeting_morning'
+  } else if (hour < 18) {
+    greetingKey = 'greeting_afternoon'
+  } else {
+    greetingKey = 'greeting_evening'
+  }
+  
+  const greeting = t(greetingKey)
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-primary/5 dark:bg-primary/10 p-8 mb-8">
@@ -28,7 +41,7 @@ export default function DashboardHeader() {
           transition={{ delay: 0.1 }}
           className="text-muted-foreground max-w-xl text-lg"
         >
-          Welcome to your command center. Track your applications, compare universities, and plan your future.
+          {t('dashboard_welcome_message')}
         </motion.p>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { validate } from '../middleware/validate'
 import { reviewClaimSchema } from '../validation/claimSchemas'
 import * as ClaimController from '../controllers/ClaimController'
 import { SyncService } from '../services/SyncService'
+import { Cache } from '../lib/cache'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -39,7 +40,50 @@ router.patch('/claims/:id/review',
   ClaimController.reviewClaim
 );
 
-// --- NEW SYSTEM INTEGRITY ROUTES ---
+// --- NEW SYSTEM INTEGRITY & POWER TOOLS ROUTES ---
+
+// GET /api/admin/health/cache - Get cache performance status
+router.get('/health/cache', requireAdmin, async (req: Request, res: Response) => {
+    try {
+        const stats = (Cache as any).getStats();
+        res.status(200).json({ status: 'success', data: stats });
+    } catch (err) {
+        // Return 500 if cache is not ready
+        res.status(500).json({ status: 'error', message: 'Cache service unavailable.' });
+    }
+});
+
+// POST /api/admin/health/cache/clear - Clear the cache
+router.post('/health/cache/clear', requireAdmin, (req: Request, res: Response) => {
+    try {
+        Cache.clear();
+        res.status(200).json({ status: 'success', message: 'In-memory cache cleared.' });
+    } catch (err) {
+        res.status(500).json({ status: 'error', message: 'Failed to clear cache.' });
+    }
+});
+
+// GET /api/admin/health/sync-status - Check Clerk/Neon data consistency
+router.get('/health/sync-status', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const status = await SyncService.verifySyncStatus();
+        res.status(200).json({ status: 'success', data: status });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// POST /api/admin/health/reconcile - Trigger Clerk -> Neon reconciliation
+router.post('/health/reconcile', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await SyncService.reconcileClerkToNeon();
+        res.status(200).json({ status: 'success', message: 'Reconciliation process initiated.', data: result });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// --- LEGACY ROUTES (DEPRECATED - Use /health/* paths above) ---
 
 // GET /api/admin/sync-status - Check for data inconsistencies (runs quickly on sample)
 router.get('/sync-status', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {

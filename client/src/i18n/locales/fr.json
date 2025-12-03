@@ -1,0 +1,21 @@
+{
+  "title_welcome": "Bienvenue sur AcademOra",
+  "dashboard_overview": "Aperçu",
+  "button_save": "Sauvegarder",
+  "page_not_found_title": "Page non trouvée",
+  "page_not_found_message": "La page que vous recherchez n'existe pas.",
+  "button_go_back": "Retour",
+  "last_updated": "Dernière mise à jour",
+  "dashboard_recent_activity": "Activité récente",
+  "dashboard_recommended": "Recommandé",
+  "dashboard_next_steps": "Prochaines étapes",
+  "button_explore": "Explorer",
+  "button_launch_matching_engine": "Lancer le moteur de correspondance",
+  "button_compare_schools": "Comparer les écoles",
+  "button_update_profile": "Mettre à jour le profil",
+  "greeting_morning": "Bonjour",
+  "greeting_afternoon": "Bon après-midi",
+  "greeting_evening": "Bonsoir",
+  "student": "Étudiant",
+  "dashboard_welcome_message": "Bienvenue dans votre centre de commande. Suivez vos candidatures, comparez les universités et planifiez votre avenir."
+}

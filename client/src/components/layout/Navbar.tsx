@@ -8,11 +8,14 @@ import { motion } from 'framer-motion'
 import AdminMenu from './AdminMenu'
 import UserMenu from './UserMenu'
 import { NotificationBell } from './NotificationBell'
+import LanguageSwitcher from '@/components/common/LanguageSwitcher'
+import { useTranslation } from 'react-i18next'
 
 export default function Navbar() {
   const { isSignedIn } = useAuth()
   const { user } = useUser()
   const { profile, fetchProfile } = useUserStore()
+  const { t } = useTranslation()
   
   const [showAdminMenu, setShowAdminMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -87,6 +90,7 @@ export default function Navbar() {
 
           {/* Right: Auth Actions */}
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             {!isSignedIn ? (
               <>
                 <Link to="/sign-in">
