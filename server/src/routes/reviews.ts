@@ -1,26 +1,19 @@
 import { Router } from 'express';
 import * as controller from '../controllers/reviewController';
 import { requireAuth } from '../middleware/requireAuth';
+import { requireAdmin } from '../middleware/requireAdmin';
 import { validate } from '../middleware/validate';
-import { z } from 'zod';
+import { createReviewSchema, moderateReviewSchema } from '../validation/reviewSchemas';
 
 const router = Router();
 
-const createReviewSchema = {
-  body: z.object({
-    universityId: z.string().uuid(),
-    rating: z.number().min(1).max(5),
-    academicRating: z.number().min(1).max(5).optional(),
-    campusRating: z.number().min(1).max(5).optional(),
-    socialRating: z.number().min(1).max(5).optional(),
-    careerRating: z.number().min(1).max(5).optional(),
-    title: z.string().min(2).max(100),
-    content: z.string().min(10),
-  }),
-};
-
 router.get('/:universityId', controller.getReviews);
+
+// Write
 router.post('/', requireAuth, validate(createReviewSchema), controller.createReview);
-router.delete('/:id', requireAuth, controller.deleteReview);
+
+// Admin
+router.patch('/:id/status', requireAuth, requireAdmin, validate(moderateReviewSchema), controller.moderateReview);
+router.delete('/:id', requireAuth, controller.deleteReview); // Controller handles permission check
 
 export default router;

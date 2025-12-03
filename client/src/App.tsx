@@ -32,6 +32,7 @@ const AdminUniversitiesPage = lazy(() => import('@/pages/admin/universities/Admi
 const UniversityEditorPage = lazy(() => import('@/pages/admin/universities/UniversityEditorPage'));
 const ArticlesList = lazy(() => import('@/pages/admin/ArticlesList'));
 const ArticleEditorPage = lazy(() => import('@/pages/admin/articles/ArticleEditorPage'));
+const ReviewModerationPage = lazy(() => import('@/pages/admin/reviews/ReviewModerationPage'));
 const AdminHealthPage = lazy(() => import('@/pages/admin/AdminHealthPage'));
 
 export default function App() {
@@ -70,6 +71,7 @@ export default function App() {
                 <Route path="articles" element={<ArticlesList />} />
                 <Route path="articles/new" element={<ArticleEditorPage />} />
                 <Route path="articles/edit/:id" element={<ArticleEditorPage />} />
+                <Route path="reviews" element={<ReviewModerationPage />} />
                 <Route path="health" element={<AdminHealthPage />} />
               </Route>
             </Route>

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { GraduationCap, DollarSign, Users, Briefcase } from 'lucide-react'
 import type { UniversityDetail } from '@/hooks/useUniversityDetail'
 import ReviewList from '@/components/reviews/ReviewList'
+import CareerHeatmap from '@/components/visualizations/CareerHeatmap'
 
 // Helper for formatting currency
 const fmtMoney = (val: number | null) => val ? `$${val.toLocaleString()}` : 'N/A'
@@ -11,9 +12,9 @@ const fmtPct = (val: number | null) => val ? `${(val * 100).toFixed(1)}%` : 'N/A
 
 function StatRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex justify-between py-3 border-b last:border-0">
+    <div className="flex justify-between py-3 border-b last:border-0 border-border/50">
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   )
 }
@@ -22,12 +23,12 @@ export default function UniversityTabs({ university }: { university: UniversityD
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <Tabs defaultValue="overview" className="space-y-8">
-        <TabsList className="bg-muted/50 p-1 h-12">
-          <TabsTrigger value="overview" className="h-10 px-6">Overview</TabsTrigger>
-          <TabsTrigger value="admissions" className="h-10 px-6">Admissions</TabsTrigger>
-          <TabsTrigger value="costs" className="h-10 px-6">Costs & Aid</TabsTrigger>
-          <TabsTrigger value="outcomes" className="h-10 px-6">Outcomes</TabsTrigger>
-          <TabsTrigger value="reviews" className="h-10 px-6">Reviews</TabsTrigger>
+        <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start">
+          <TabsTrigger value="overview" className="h-10 px-6 rounded-md">Overview</TabsTrigger>
+          <TabsTrigger value="admissions" className="h-10 px-6 rounded-md">Admissions</TabsTrigger>
+          <TabsTrigger value="costs" className="h-10 px-6 rounded-md">Costs & Aid</TabsTrigger>
+          <TabsTrigger value="outcomes" className="h-10 px-6 rounded-md">Outcomes</TabsTrigger>
+          <TabsTrigger value="reviews" className="h-10 px-6 rounded-md">Reviews</TabsTrigger>
         </TabsList>
 
         {/* --- OVERVIEW TAB --- */}
@@ -64,10 +65,10 @@ export default function UniversityTabs({ university }: { university: UniversityD
               <CardContent className="space-y-4">
                 <StatRow label="Total Students" value={university.studentPopulation?.toLocaleString()} />
                 <StatRow label="Student/Faculty Ratio" value={`1:${university.studentFacultyRatio || '?'}`} />
-                <div className="space-y-1 pt-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Male</span>
-                    <span>Female</span>
+                <div className="space-y-2 pt-2">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Male ({fmtPct(university.percentMale)})</span>
+                    <span>Female ({fmtPct(university.percentFemale)})</span>
                   </div>
                   <div className="h-2 rounded-full bg-muted overflow-hidden flex">
                     <div className="bg-blue-500 h-full" style={{ width: `${(university.percentMale || 0.5) * 100}%` }} />
@@ -88,8 +89,8 @@ export default function UniversityTabs({ university }: { university: UniversityD
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="text-center p-6 bg-muted/30 rounded-xl border">
-                <div className="text-4xl font-bold text-primary">{fmtPct(university.acceptanceRate)}</div>
+              <div className="text-center p-6 bg-primary/5 rounded-xl border border-primary/10">
+                <div className="text-4xl font-black text-primary">{fmtPct(university.acceptanceRate)}</div>
                 <div className="text-sm text-muted-foreground mt-1">Acceptance Rate</div>
               </div>
               <StatRow label="Application Deadline" value={university.applicationDeadline ? new Date(university.applicationDeadline).toLocaleDateString() : 'N/A'} />
@@ -136,47 +137,48 @@ export default function UniversityTabs({ university }: { university: UniversityD
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-600" /> Sticker Price (Yearly)
+                <DollarSign className="h-5 w-5 text-green-600" /> Yearly Costs
               </CardTitle>
             </CardHeader>
             <CardContent>
               <StatRow label="In-State Tuition" value={fmtMoney(university.tuitionInState)} />
-              <StatRow label="Out-of-State Tuition" value={fmtMoney(university.tuitionOutState)} />
+              <StatRow label="Out-of-State" value={fmtMoney(university.tuitionOutState)} />
+              <StatRow label="International" value={fmtMoney(university.tuitionInternational)} />
               <StatRow label="Room & Board" value={fmtMoney(university.roomAndBoard)} />
-              <div className="mt-4 pt-4 border-t flex justify-between font-bold text-lg">
-                <span>Total (Out-of-State)</span>
-                <span>{fmtMoney((university.tuitionOutState || 0) + (university.roomAndBoard || 0))}</span>
-              </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Financial Aid</CardTitle>
             </CardHeader>
             <CardContent>
               <StatRow label="Avg Net Price" value={fmtMoney(university.averageNetPrice)} />
-              <StatRow label="Students Receiving Aid" value={fmtPct(university.percentReceivingAid)} />
-              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-sm text-blue-800 dark:text-blue-200">
-                💡 <strong>Tip:</strong> The "Net Price" is what average students actually pay after grants. Use our Calculator to see your personal estimate.
-              </div>
+              <StatRow label="Students w/ Aid" value={fmtPct(university.percentReceivingAid)} />
+              <StatRow label="Avg Grant" value={fmtMoney(university.averageGrantAid)} />
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* --- OUTCOMES TAB --- */}
-        <TabsContent value="outcomes" className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary" /> Career
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StatRow label="Graduation Rate" value={fmtPct(university.graduationRate)} />
-              <StatRow label="Avg Starting Salary" value={fmtMoney(university.averageStartingSalary)} />
-            </CardContent>
-          </Card>
+        <TabsContent value="outcomes" className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-primary" /> Employment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <StatRow label="Graduation Rate" value={fmtPct(university.graduationRate)} />
+                <StatRow label="Employment Rate" value={fmtPct(university.employmentRate)} />
+                <StatRow label="Starting Salary" value={fmtMoney(university.averageStartingSalary)} />
+              </CardContent>
+            </Card>
+            {/* Legacy Feature Restored: Career Heatmap */}
+            {university.averageStartingSalary && (
+              <CareerHeatmap startingSalary={university.averageStartingSalary} />
+            )}
+          </div>
         </TabsContent>
 
         {/* --- REVIEWS TAB --- */}

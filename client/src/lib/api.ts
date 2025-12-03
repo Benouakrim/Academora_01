@@ -16,17 +16,19 @@ export function setupInterceptors(getToken: GetTokenFn) {
   const interceptorId = api.interceptors.request.use(async (config) => {
     try {
       const token = await getToken()
+      console.log('[API Interceptor] Token retrieved:', token ? `${token.substring(0, 20)}...` : 'null')
       if (token) {
         config.headers = config.headers ?? {}
         config.headers.Authorization = `Bearer ${token}`
       }
-    } catch (_err) {
-      // no-op: proceed without token
+    } catch (err) {
+      console.error('[API Interceptor] Error getting token:', err)
     }
     return config
   })
 
   ;(api.defaults as any)._authInterceptorSet = interceptorId
+  console.log('[API Interceptor] Setup complete')
 }
 
 export default api

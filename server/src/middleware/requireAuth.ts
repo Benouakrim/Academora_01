@@ -1,4 +1,4 @@
-import { clerkMiddleware } from '@clerk/express';
+import { clerkMiddleware, requireAuth as clerkRequireAuth } from '@clerk/express';
 import { Request, Response, NextFunction } from 'express';
 
 // Export Clerk middleware for auth context (should be mounted globally)
@@ -8,6 +8,13 @@ export const clerkAuth = clerkMiddleware();
 export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   const getAuth = (req as any).auth as (() => { userId?: string } | undefined);
   const auth = typeof getAuth === 'function' ? getAuth() : undefined;
+  
+  console.log('[requireAuth] Check:', {
+    hasAuthFn: typeof getAuth === 'function',
+    auth,
+    userId: auth?.userId
+  });
+  
   if (!auth || !auth.userId) {
     return res.status(401).json({ error: 'unauthenticated' });
   }
