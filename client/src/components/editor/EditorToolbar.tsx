@@ -3,7 +3,7 @@ import {
   Bold, Italic, Underline,
   AlignLeft, AlignCenter, AlignRight,
   List, ListOrdered, Quote, Link as LinkIcon, Image as ImageIcon,
-  Heading1, Heading2, Heading3, Highlighter, Undo, Redo 
+  Heading1, Heading2, Heading3, Highlighter, Undo, Redo, Palette, Type
 } from 'lucide-react'
 import { Toggle } from '@/components/ui/toggle'
 import { Button } from '@/components/ui/button'
@@ -40,6 +40,13 @@ export default function EditorToolbar({ editor }: Props) {
     }
   }
 
+  const setColor = () => {
+    const color = window.prompt('Enter color (hex or name)', editor.getAttributes('textStyle').color || '#000000')
+    if (color) {
+      editor.chain().focus().setColor(color).run()
+    }
+  }
+
   return (
     <div className="border-b bg-muted/20 p-2 flex flex-wrap gap-1 sticky top-0 z-20 backdrop-blur-sm items-center">
       {/* History */}
@@ -65,7 +72,7 @@ export default function EditorToolbar({ editor }: Props) {
         </Toggle>
       </ButtonGroup>
 
-      {/* Styling */}
+      {/* Text Style */}
       <ButtonGroup>
         <Toggle pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}>
           <Bold className="h-4 w-4" />
@@ -79,6 +86,28 @@ export default function EditorToolbar({ editor }: Props) {
         <Toggle pressed={editor.isActive('highlight')} onPressedChange={() => editor.chain().focus().toggleHighlight().run()}>
           <Highlighter className="h-4 w-4" />
         </Toggle>
+      </ButtonGroup>
+
+      {/* Color & Style */}
+      <ButtonGroup>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 w-8 p-0" 
+          onClick={setColor}
+          title="Text Color"
+        >
+          <Palette className="h-4 w-4" />
+        </Button>
+        <label className="h-8 w-8 flex items-center justify-center cursor-pointer hover:bg-accent rounded-md">
+          <Type className="h-4 w-4" />
+          <input
+            type="color"
+            className="sr-only"
+            onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
+            value={editor.getAttributes('textStyle').color || '#000000'}
+          />
+        </label>
       </ButtonGroup>
 
       {/* Alignment */}

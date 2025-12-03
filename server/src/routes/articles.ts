@@ -10,6 +10,7 @@ const router = Router();
 router.get('/', controller.getArticles);
 router.get('/taxonomies', controller.getTaxonomies); // Combined categories/tags
 router.get('/:slug', controller.getArticleBySlug);
+router.post('/:slug/view', controller.recordView);
 
 // Protected Routes
 router.post('/', requireAuth, validate(createArticleSchema), controller.createArticle);

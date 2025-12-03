@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { format } from 'date-fns';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -21,6 +22,16 @@ export default function ArticlePage() {
     },
     enabled: !!slug
   });
+
+  // Track article view
+  useEffect(() => {
+    if (article?.id && slug) {
+      // Fire-and-forget view tracking
+      api.post(`/articles/${slug}/view`).catch(() => {
+        // Silently fail - view tracking shouldn't break the user experience
+      });
+    }
+  }, [article?.id, slug]);
 
   if (isLoading) {
     return (

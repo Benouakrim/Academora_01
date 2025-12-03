@@ -44,6 +44,9 @@ export default function ComparePage() {
 
   const unis = universities || []
 
+  // Chart colors
+  const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444']
+
   // --- Data Preparation for Charts ---
   
   // 1. Cost Chart (Bar)
@@ -71,6 +74,15 @@ export default function ComparePage() {
     })
     return row
   })
+
+  // 3. Scatter Plot Data (Safety vs Party Scene)
+  const scatterData = unis.map((u, i) => ({
+    name: u.shortName || u.name,
+    x: u.partySceneRating || 0,
+    y: u.safetyRating || 0,
+    z: 200,
+    fill: COLORS[i % COLORS.length]
+  }))
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-black pb-20">
@@ -151,6 +163,14 @@ export default function ComparePage() {
                 dataKeys={unis.map(u => u.shortName || u.name)}
               />
             )}
+            {unis.length >= 2 && (
+              <ComparisonChart 
+                title="Safety vs. Party Scene Analysis" 
+                type="scatter" 
+                data={scatterData}
+                dataKeys={[]}
+              />
+            )}
           </div>
         )}
 
@@ -167,11 +187,17 @@ export default function ComparePage() {
                     { label: 'Acceptance Rate', render: (u: any) => u.acceptanceRate ? <Badge variant={u.acceptanceRate < 0.2 ? "destructive" : "secondary"}>{(u.acceptanceRate * 100).toFixed(1)}%</Badge> : '—' },
                     { label: 'Average GPA', render: (u: any) => u.avgGpa || '—' },
                     { label: 'SAT Range (Math)', render: (u: any) => u.satMath25 ? `${u.satMath25}-${u.satMath75}` : '—' },
+                    { label: 'SAT Range (Reading)', render: (u: any) => u.satEbrw25 ? `${u.satEbrw25}-${u.satEbrw75}` : '—' },
+                    { label: 'ACT Composite Range', render: (u: any) => u.actComposite25 ? `${u.actComposite25}-${u.actComposite75}` : '—' },
                     { label: 'Student Population', render: (u: any) => u.studentPopulation?.toLocaleString() || '—' },
                     { label: 'Intl. Students', render: (u: any) => u.percentInternational ? `${(u.percentInternational * 100).toFixed(0)}%` : '—' },
-                    { label: 'Climate', render: (u: any) => u.climateZone || '—' },
+                    { label: 'Safety Rating', render: (u: any) => u.safetyRating ? <Badge variant="outline" className="bg-green-50 text-green-700">{u.safetyRating}/5 ⭐</Badge> : '—' },
+                    { label: 'Party Scene', render: (u: any) => u.partySceneRating ? <Badge variant="outline" className="bg-purple-50 text-purple-700">{u.partySceneRating}/5 🎉</Badge> : '—' },
+                    { label: 'Climate Zone', render: (u: any) => u.climateZone || '—' },
                     { label: 'Setting', render: (u: any) => u.setting || '—' },
-                    { label: 'Post-Grad Visa', render: (u: any) => u.visaDurationMonths ? <span className="text-green-600 font-medium flex items-center gap-1"><Check className="h-3 w-3" /> {u.visaDurationMonths} Months</span> : <span className="text-muted-foreground flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Unknown</span> },
+                    { label: 'Post-Grad Visa', render: (u: any) => u.visaDurationMonths ? <Badge variant={u.visaDurationMonths >= 24 ? "default" : "secondary"} className="flex items-center gap-1 w-fit"><Check className="h-3 w-3" /> {u.visaDurationMonths} Months</Badge> : <span className="text-muted-foreground flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Unknown</span> },
+                    { label: 'Alumni Network', render: (u: any) => u.alumniNetwork ? <Badge variant="outline">{u.alumniNetwork}/5</Badge> : '—' },
+                    { label: 'Internship Support', render: (u: any) => u.internshipSupport ? <Badge variant="outline">{u.internshipSupport}/5</Badge> : '—' },
                   ].map((row, idx) => (
                     <tr key={idx} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                       <td className="p-4 w-1/4 font-medium text-muted-foreground">{row.label}</td>

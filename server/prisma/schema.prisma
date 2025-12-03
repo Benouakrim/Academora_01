@@ -314,6 +314,7 @@ model Article {
   featuredImage String?
   status        ArticleStatus @default(DRAFT)
   publishedAt   DateTime?
+  viewCount     Int @default(0)
   
   // SEO
   metaTitle       String?

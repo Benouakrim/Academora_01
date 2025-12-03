@@ -15,6 +15,8 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
       onValueChange?.([Number(e.target.value)])
     }
 
+    const currentValue = value[0]
+
     return (
       <input
         type="range"
@@ -22,8 +24,13 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
         min={min}
         max={max}
         step={step}
-        value={value[0]}
+        value={currentValue}
         onChange={handleChange}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={currentValue}
+        aria-valuetext={`${currentValue}`}
+        role="slider"
         className={cn(
           'w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary',
           className

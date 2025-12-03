@@ -224,3 +224,27 @@ export const deleteArticle = async (req: Request, res: Response, next: NextFunct
     next(err);
   }
 };
+
+export const recordView = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { slug } = req.params;
+
+    const article = await prisma.article.findUnique({
+      where: { slug },
+      select: { id: true }
+    });
+
+    if (!article) {
+      throw new AppError(404, 'Article not found');
+    }
+
+    await prisma.article.update({
+      where: { id: article.id },
+      data: { viewCount: { increment: 1 } }
+    });
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};

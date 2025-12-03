@@ -15,10 +15,10 @@ const clerkPk = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Data remains "fresh" for 5 minutes (no refetching)
-      staleTime: 1000 * 60 * 5, 
-      // Cache remains in memory for 30 minutes
-      gcTime: 1000 * 60 * 30,
+      // Increased: Data remains "fresh" for 10 minutes (no refetching)
+      staleTime: 1000 * 60 * 10, 
+      // Increased: Cache remains in memory for 60 minutes
+      gcTime: 1000 * 60 * 60,
       // Disable auto-refetch on window focus for better UX
       refetchOnWindowFocus: false,
       // Retry failed requests twice

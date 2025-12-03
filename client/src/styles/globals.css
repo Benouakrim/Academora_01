@@ -68,8 +68,8 @@
     --background: 0 0% 100%;
     --foreground: 222 47% 11%; /* Deep Navy Text */
 
-    /* Primary: Electric Blue */
-    --primary: 221 83% 53%;
+    /* Primary: Electric Blue (WCAG AA Compliant - 4.5:1 contrast) */
+    --primary: 221 83% 48%;
     --primary-foreground: 210 40% 98%;
 
     /* Secondary: Soft Violet */

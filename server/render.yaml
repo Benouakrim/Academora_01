@@ -6,11 +6,43 @@ services:
     buildCommand: "npm install && npm run build"
     startCommand: "npm start"
     envVars:
+      # Database
       - key: DATABASE_URL
         sync: false
+      
+      # Authentication (Clerk)
       - key: CLERK_SECRET_KEY
         sync: false
       - key: CLERK_WEBHOOK_SECRET
         sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      
+      # Email Service (Resend)
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        value: noreply@academora.com
+      
+      # File Upload (Cloudinary)
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      
+      # Application
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: CLIENT_URL
+        sync: false
+      
+      # Optional: Analytics & Monitoring
+      # - key: SENTRY_DSN
+      #   sync: false
+    
     autoDeploy: true
     rootDir: server

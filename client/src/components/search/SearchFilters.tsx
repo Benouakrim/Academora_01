@@ -1,4 +1,4 @@
-import { Search, MapPin, DollarSign, BookOpen, Sun, Building } from 'lucide-react'
+import { Search, MapPin, DollarSign, BookOpen, Sun, Building, Shield, PartyPopper } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
@@ -65,7 +65,7 @@ export default function SearchFilters({ filters, onChange }: Props) {
 
             <div className="space-y-2">
               <Label className="text-xs flex gap-2 items-center"><Sun className="h-3 w-3" /> Climate</Label>
-              <Select value={filters.climate || 'all'} onValueChange={(v) => update('climate', v === 'all' ? undefined : v)}>
+              <Select value={filters.climateZone || 'all'} onValueChange={(v) => update('climateZone', v === 'all' ? undefined : v)}>
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Any Climate" />
                 </SelectTrigger>
@@ -73,7 +73,8 @@ export default function SearchFilters({ filters, onChange }: Props) {
                   <SelectItem value="all">Any Climate</SelectItem>
                   <SelectItem value="Temperate">Temperate</SelectItem>
                   <SelectItem value="Tropical">Tropical</SelectItem>
-                  <SelectItem value="Cold">Cold / Continental</SelectItem>
+                  <SelectItem value="Continental">Cold / Continental</SelectItem>
+                  <SelectItem value="Arid">Arid</SelectItem>
                   <SelectItem value="Mediterranean">Mediterranean</SelectItem>
                 </SelectContent>
               </Select>
@@ -146,6 +147,44 @@ export default function SearchFilters({ filters, onChange }: Props) {
                 step={0.1}
                 value={[filters.minGpa || 2.0]}
                 onValueChange={(v) => update('minGpa', v[0])}
+              />
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Campus Life & Safety Section */}
+        <AccordionItem value="campuslife">
+          <AccordionTrigger className="text-sm font-semibold">
+            <span className="flex items-center gap-2"><Shield className="h-4 w-4 text-purple-600" /> Campus Life & Safety</span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-6 pt-4 px-1">
+            <div className="space-y-3">
+              <div className="flex justify-between text-xs">
+                <span className="flex items-center gap-1.5"><Shield className="h-3 w-3" /> Min Safety Rating</span>
+                <span className="font-medium text-primary">{filters.minSafetyRating ? `${filters.minSafetyRating.toFixed(1)}/5.0` : 'Any'}</span>
+              </div>
+              <Slider
+                min={0}
+                max={5}
+                step={0.5}
+                value={[filters.minSafetyRating || 0]}
+                onValueChange={(v) => update('minSafetyRating', v[0] === 0 ? undefined : v[0])}
+                className="[&>.bg-primary]:bg-purple-600"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between text-xs">
+                <span className="flex items-center gap-1.5"><PartyPopper className="h-3 w-3" /> Min Party Scene</span>
+                <span className="font-medium text-primary">{filters.minPartySceneRating ? `${filters.minPartySceneRating.toFixed(1)}/5.0` : 'Any'}</span>
+              </div>
+              <Slider
+                min={0}
+                max={5}
+                step={0.5}
+                value={[filters.minPartySceneRating || 0]}
+                onValueChange={(v) => update('minPartySceneRating', v[0] === 0 ? undefined : v[0])}
+                className="[&>.bg-primary]:bg-purple-600"
               />
             </div>
           </AccordionContent>

@@ -24,8 +24,10 @@ export type SearchFilters = {
   major?: string
   maxTuition?: number
   minGpa?: number
-  climate?: string
+  climateZone?: string
   setting?: string
+  minSafetyRating?: number
+  minPartySceneRating?: number
 }
 
 export function useUniversitySearch(filters: SearchFilters) {
@@ -35,14 +37,23 @@ export function useUniversitySearch(filters: SearchFilters) {
   return useQuery({
     queryKey: ['universities', debouncedFilters],
     queryFn: async () => {
+      // Map 'search' to 'q' for backend compatibility
+      const { search, ...restFilters } = debouncedFilters
+      const filtersForBackend = {
+        ...restFilters,
+        ...(search && { q: search })
+      }
+      
       // Clean undefined values
       const params = Object.fromEntries(
-        Object.entries(debouncedFilters).filter(([_, v]) => v !== undefined && v !== '')
+        Object.entries(filtersForBackend).filter(([_, v]) => v !== undefined && v !== '')
       )
       
       const { data } = await api.get<{ data: University[], meta: { total: number, page: number, pageSize: number } }>('/universities', { params })
       return data.data // Extract the universities array from the response
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    // Override global default: shorter staleTime for search results (2 minutes)
+    // since they aggregate many data points and should be more responsive
+    staleTime: 1000 * 60 * 2,
   })
 }

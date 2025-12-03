@@ -6,6 +6,8 @@ import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import Highlight from '@tiptap/extension-highlight'
 import Underline from '@tiptap/extension-underline'
+import TextStyle from '@tiptap/extension-text-style'
+import Color from '@tiptap/extension-color'
 import EditorToolbar from './EditorToolbar'
 
 type Props = {
@@ -45,6 +47,8 @@ export default function RichTextEditor({ content, onChange, editable = true, pla
         }
       }),
       Underline,
+      TextStyle,
+      Color,
     ],
     content,
     editable,

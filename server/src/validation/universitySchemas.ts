@@ -6,6 +6,10 @@ export const searchUniversitiesSchema = {
     country: z.string().optional(),
     maxTuition: z.string().transform((val) => (val ? Number(val) : undefined)).optional(),
     minGpa: z.string().transform((val) => (val ? Number(val) : undefined)).optional(),
+    climateZone: z.string().optional(),
+    setting: z.string().optional(),
+    minSafetyRating: z.string().transform((val) => (val ? Number(val) : undefined)).optional(),
+    minPartySceneRating: z.string().transform((val) => (val ? Number(val) : undefined)).optional(),
     page: z.string().transform((val) => (val ? Number(val) : 1)).optional().default('1'),
   }),
 };

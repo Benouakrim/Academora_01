@@ -18,6 +18,7 @@ const UniversityPage = lazy(() => import('@/pages/university/UniversityPage'));
 const BlogPage = lazy(() => import('@/pages/blog/BlogPage'));
 const ArticlePage = lazy(() => import('@/pages/blog/ArticlePage'));
 const UserArticleEditor = lazy(() => import('@/pages/blog/UserArticleEditor'));
+const StaticContentPage = lazy(() => import('@/pages/StaticContentPage'));
 
 // Dashboard & Auth
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
@@ -50,6 +51,10 @@ export default function App() {
               <Route path="blog" element={<BlogPage />} />
               <Route path="blog/:slug" element={<ArticlePage />} />
               <Route path="university/:slug" element={<UniversityPage />} />
+              <Route path="about" element={<StaticContentPage slug="about" />} />
+              <Route path="contact" element={<StaticContentPage slug="contact" />} />
+              <Route path="privacy" element={<StaticContentPage slug="privacy" />} />
+              <Route path="terms" element={<StaticContentPage slug="terms" />} />
               <Route path="sign-in/*" element={<SignIn routing="path" path="/sign-in" />} />
               <Route path="sign-up/*" element={<SignUp routing="path" path="/sign-up" />} />
             </Route>

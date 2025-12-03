@@ -12,11 +12,14 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  Legend
+  Legend,
+  ScatterChart,
+  Scatter,
+  ZAxis
 } from 'recharts'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
-type ChartType = 'bar' | 'radar'
+type ChartType = 'bar' | 'radar' | 'scatter'
 
 type ChartProps = {
   title: string
@@ -55,7 +58,7 @@ export default function ComparisonChart({ title, data, type = 'bar', dataKeys = 
                   </Bar>
                 ))}
               </BarChart>
-            ) : (
+            ) : type === 'radar' ? (
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
                 <PolarGrid opacity={0.2} />
                 <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
@@ -73,6 +76,39 @@ export default function ComparisonChart({ title, data, type = 'bar', dataKeys = 
                   />
                 ))}
               </RadarChart>
+            ) : (
+              <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                <XAxis 
+                  type="number" 
+                  dataKey="x" 
+                  name="Party Scene" 
+                  domain={[0, 5]}
+                  label={{ value: 'Party Scene Rating', position: 'bottom', fontSize: 12 }}
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis 
+                  type="number" 
+                  dataKey="y" 
+                  name="Safety" 
+                  domain={[0, 5]}
+                  label={{ value: 'Safety Rating', angle: -90, position: 'left', fontSize: 12 }}
+                  tick={{ fontSize: 12 }}
+                />
+                <ZAxis range={[100, 400]} />
+                <Tooltip 
+                  cursor={{ strokeDasharray: '3 3' }}
+                  formatter={(value: number, name: string) => [value, name === 'x' ? 'Party Scene' : name === 'y' ? 'Safety' : name]}
+                  labelFormatter={(value) => data.find((d) => d.x === value || d.y === value)?.name || ''}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Legend />
+                <Scatter name="Universities" data={data} fill="#8b5cf6">
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Scatter>
+              </ScatterChart>
             )}
           </ResponsiveContainer>
         </div>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@clerk/clerk-react'
 import { formatDistanceToNow } from 'date-fns'
-import { MessageSquare, Reply } from 'lucide-react'
+import { MessageSquare, Reply, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -21,6 +21,8 @@ type Comment = {
   id: string
   content: string
   createdAt: string
+  upvotes: number
+  downvotes: number
   author: CommentAuthor
   replies?: Comment[]
 }
@@ -67,6 +69,11 @@ export default function CommentSection({ articleId }: { articleId: string }) {
   const handleReply = (parentId: string) => {
     if (!replyContent.trim()) return
     mutate({ content: replyContent, parentId })
+  }
+
+  const handleVote = (commentId: string, voteType: 'up' | 'down') => {
+    console.log(`Vote ${voteType} on comment ${commentId}`)
+    toast.info('Voting feature coming soon!')
   }
 
   return (
@@ -123,15 +130,38 @@ export default function CommentSection({ articleId }: { articleId: string }) {
                   <p className="text-sm leading-relaxed">{comment.content}</p>
                 </div>
                 
-                {/* Reply Button */}
-                {isSignedIn && (
-                  <button 
-                    onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-                    className="text-xs text-muted-foreground hover:text-primary mt-2 flex items-center gap-1 font-medium"
-                  >
-                    <Reply className="h-3 w-3" /> Reply
-                  </button>
-                )}
+                {/* Engagement Row */}
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2 text-xs"
+                      onClick={() => handleVote(comment.id, 'up')}
+                    >
+                      <ThumbsUp className="h-3 w-3 mr-1" />
+                      {comment.upvotes}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2 text-xs"
+                      onClick={() => handleVote(comment.id, 'down')}
+                    >
+                      <ThumbsDown className="h-3 w-3 mr-1" />
+                      {comment.downvotes}
+                    </Button>
+                  </div>
+                  
+                  {isSignedIn && (
+                    <button 
+                      onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                      className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-medium"
+                    >
+                      <Reply className="h-3 w-3" /> Reply
+                    </button>
+                  )}
+                </div>
 
                 {/* Reply Input */}
                 {replyTo === comment.id && (
@@ -156,21 +186,47 @@ export default function CommentSection({ articleId }: { articleId: string }) {
                 {comment.replies && comment.replies.length > 0 && (
                   <div className="mt-4 ml-6 pl-4 border-l-2 border-muted space-y-4">
                     {comment.replies.map((reply) => (
-                      <div key={reply.id} className="flex gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={reply.author.avatarUrl || undefined} />
-                          <AvatarFallback>{reply.author.firstName?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="bg-muted/20 p-3 rounded-lg flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-semibold text-xs">
-                              {reply.author.firstName} {reply.author.lastName}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {formatDistanceToNow(new Date(reply.createdAt))} ago
-                            </span>
+                      <div key={reply.id}>
+                        <div className="flex gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={reply.author.avatarUrl || undefined} />
+                            <AvatarFallback>{reply.author.firstName?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="bg-muted/20 p-3 rounded-lg">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-xs">
+                                  {reply.author.firstName} {reply.author.lastName}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {formatDistanceToNow(new Date(reply.createdAt))} ago
+                                </span>
+                              </div>
+                              <p className="text-xs leading-relaxed">{reply.content}</p>
+                            </div>
+                            
+                            {/* Reply Engagement */}
+                            <div className="flex items-center gap-2 mt-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 px-1.5 text-[10px]"
+                                onClick={() => handleVote(reply.id, 'up')}
+                              >
+                                <ThumbsUp className="h-2.5 w-2.5 mr-0.5" />
+                                {reply.upvotes}
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 px-1.5 text-[10px]"
+                                onClick={() => handleVote(reply.id, 'down')}
+                              >
+                                <ThumbsDown className="h-2.5 w-2.5 mr-0.5" />
+                                {reply.downvotes}
+                              </Button>
+                            </div>
                           </div>
-                          <p className="text-xs leading-relaxed">{reply.content}</p>
                         </div>
                       </div>
                     ))}

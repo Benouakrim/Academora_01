@@ -38,11 +38,11 @@ export function useCompareData() {
     queryKey: ['compare', slugs],
     queryFn: async () => {
       if (slugs.length === 0) return []
-      // Parallel fetch (in production, use a bulk endpoint)
-      const promises = slugs.map((slug) =>
-        api.get<UniversityDetail>(`/universities/${slug}`).then((r) => r.data)
-      )
-      return Promise.all(promises)
+      // Use bulk endpoint for efficient single-request fetch
+      const response = await api.get<UniversityDetail[]>('/compare', {
+        params: { slugs: slugs.join(',') }
+      })
+      return response.data
     },
     enabled: slugs.length > 0,
   })
