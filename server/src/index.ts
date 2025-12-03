@@ -27,14 +27,17 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(morgan('dev'));
-// Attach Clerk auth context so request handlers can read (req as any).auth
-app.use(clerkAuth);
+
 // Capture raw body for webhook signature verification (Clerk via Svix)
-app.use(express.json({
+// This must be BEFORE any routes are mounted to capture the body
+app.use('/api/webhooks', express.json({
   verify: (req: any, _res, buf) => {
     req.rawBody = buf.toString();
   },
 }));
+
+// Standard JSON parsing for all other routes
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check / Root route
@@ -56,6 +59,8 @@ app.get('/', (_req, res) => {
 });
 
 // Mount API routes
+// Note: Clerk auth is applied inside individual route files where needed
+// Webhooks bypass Clerk auth and use signature verification instead
 app.use('/api', router);
 
 // Global error handler (must be after all routes)

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/UserService';
 import { FinancialProfileService } from '../services/FinancialProfileService';
+import { SyncService } from '../services/SyncService';
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../utils/AppError';
 
@@ -39,7 +40,11 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
     // Split the request body into user and financial data
     const userUpdateData: any = {};
     const financialUpdateData: any = {};
+    let neonUserId = ''; // To store the internal ID for syncing
 
+    const existingUser = await prisma.user.findUnique({ where: { clerkId }, select: { id: true } });
+    if (existingUser) neonUserId = existingUser.id;
+    
     Object.entries(req.body).forEach(([key, value]) => {
       if (financialFields.includes(key)) {
         financialUpdateData[key] = value;
@@ -52,13 +57,20 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
     let updatedUser;
     if (Object.keys(userUpdateData).length > 0) {
       updatedUser = await UserService.updateProfile(clerkId, userUpdateData);
+      neonUserId = updatedUser.id;
     }
 
     // Upsert FinancialProfile if there's financial data
-    let updatedFinancialProfile;
     if (Object.keys(financialUpdateData).length > 0) {
-      updatedFinancialProfile = await FinancialProfileService.upsert(clerkId, financialUpdateData);
+      await FinancialProfileService.upsert(clerkId, financialUpdateData);
     }
+    
+    // --- NEW SYNC LOGIC ---
+    if (neonUserId) {
+        // Push updated Neon data back to Clerk metadata
+        await SyncService.syncNeonToClerk(neonUserId);
+    }
+    // --- END NEW SYNC LOGIC ---
 
     // Fetch complete updated profile to return
     const completeProfile = await UserService.getProfile(clerkId);

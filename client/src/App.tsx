@@ -15,6 +15,7 @@ const LandingPage = lazy(() => import('@/pages/landing/LandingPage'));
 const SearchPage = lazy(() => import('@/pages/search/SearchPage'));
 const ComparePage = lazy(() => import('@/pages/compare/ComparePage'));
 const UniversityPage = lazy(() => import('@/pages/university/UniversityPage'));
+const UniversityClaimPage = lazy(() => import('@/pages/university/UniversityClaimPage'));
 const BlogPage = lazy(() => import('@/pages/blog/BlogPage'));
 const ArticlePage = lazy(() => import('@/pages/blog/ArticlePage'));
 const UserArticleEditor = lazy(() => import('@/pages/blog/UserArticleEditor'));
@@ -24,6 +25,8 @@ const StaticContentPage = lazy(() => import('@/pages/StaticContentPage'));
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
 const SavedPage = lazy(() => import('@/pages/dashboard/SavedPage'));
 const ProfilePage = lazy(() => import('@/pages/dashboard/profile/ProfilePage'));
+const ReferralDashboardPage = lazy(() => import('@/pages/dashboard/ReferralDashboardPage'));
+const MatchingEnginePage = lazy(() => import('@/pages/dashboard/MatchingEnginePage'));
 const SignIn = lazy(() => import('@clerk/clerk-react').then(m => ({ default: m.SignIn })));
 const SignUp = lazy(() => import('@clerk/clerk-react').then(m => ({ default: m.SignUp })));
 
@@ -51,6 +54,7 @@ export default function App() {
               <Route path="blog" element={<BlogPage />} />
               <Route path="blog/:slug" element={<ArticlePage />} />
               <Route path="university/:slug" element={<UniversityPage />} />
+              <Route path="university-claims/claim" element={<UniversityClaimPage />} />
               <Route path="about" element={<StaticContentPage slug="about" />} />
               <Route path="contact" element={<StaticContentPage slug="contact" />} />
               <Route path="privacy" element={<StaticContentPage slug="privacy" />} />
@@ -65,6 +69,8 @@ export default function App() {
                 <Route index element={<DashboardPage />} />
                 <Route path="saved" element={<SavedPage />} />
                 <Route path="profile" element={<ProfilePage />} />
+                <Route path="referrals" element={<ReferralDashboardPage />} />
+                <Route path="matching-engine" element={<MatchingEnginePage />} />
               </Route>
             </Route>
 

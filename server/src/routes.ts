@@ -1,13 +1,14 @@
 import { Router, Request, Response } from 'express';
+import { clerkAuth } from './middleware/requireAuth';
 
 const router = Router();
 
-// Health check endpoint
+// Health check endpoint (no auth required)
 router.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Future route placeholders
+// Import routes
 import universityRoutes from './routes/universities';
 import matchingRoutes from './routes/matching';
 import financialAidRoutes from './routes/financialAid';
@@ -24,11 +25,20 @@ import staticRoutes from './routes/static';
 import notificationRoutes from './routes/notifications';
 import microContentRoutes from './routes/microContent';
 import compareRoutes from './routes/compare';
+import claimsRoutes from './routes/claims';
+import referralsRoutes from './routes/referrals';
+
+// Webhooks - NO AUTH (uses signature verification)
+router.use('/webhooks', webhookRoutes);
+
+// Apply Clerk auth to all other routes
+router.use(clerkAuth);
+
+// Protected routes (require authentication)
 router.use('/universities', universityRoutes);
 router.use('/match', matchingRoutes);
 router.use('/aid', financialAidRoutes);
 router.use('/user', userRoutes);
-router.use('/webhooks', webhookRoutes);
 router.use('/admin', adminRoutes);
 router.use('/articles', articleRoutes);
 router.use('/upload', uploadRoutes);
@@ -40,6 +50,8 @@ router.use('/pages', staticRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/micro-content', microContentRoutes);
 router.use('/compare', compareRoutes);
+router.use('/claims', claimsRoutes);
+router.use('/referrals', referralsRoutes);
 // router.use('/users', userRoutes);
 // router.use('/saved', savedUniversityRoutes);
 // router.use('/comparisons', comparisonRoutes);

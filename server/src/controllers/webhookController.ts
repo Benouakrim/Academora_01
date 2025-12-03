@@ -4,15 +4,10 @@ import { PrismaClient, UserRole } from '@prisma/client';
 import { clerkClient } from '@clerk/express';
 import { AppError } from '../utils/AppError';
 import { EmailService } from '../services/EmailService';
+import { SyncService } from '../services/SyncService';
+import { BadgeService } from '../services/BadgeService';
 
 const prisma = new PrismaClient();
-
-// Helper: sync DB role into Clerk publicMetadata for client-side gating
-async function syncRoleToClerk(clerkId: string, role: UserRole) {
-  await clerkClient.users.updateUserMetadata(clerkId, {
-    publicMetadata: { role: role.toLowerCase() },
-  });
-}
 
 // Clerk webhook handler
 export const handleClerkWebhook = async (req: Request, res: Response, next: NextFunction) => {
@@ -84,21 +79,30 @@ export const handleClerkWebhook = async (req: Request, res: Response, next: Next
           const updateData: any = { firstName, lastName, avatarUrl };
           if (email) updateData.email = email;
           await prisma.user.update({ where: { clerkId }, data: updateData });
-          console.log('[Clerk Webhook] User updated:', clerkId);
           
-          // Sync DB role into Clerk publicMetadata for immediate client-side gating
-          await syncRoleToClerk(clerkId, existing.role).catch(e => 
-            console.error('Failed to sync role to Clerk:', e)
+          // --- NEW SYNC LOGIC (Update) ---
+          await SyncService.syncNeonToClerk(existing.id).catch(e => 
+            console.error('Failed to sync role to Clerk during update:', e)
           );
+          // -------------------------------
+          
+          console.log('[Clerk Webhook] User updated:', clerkId);
         } else if (email) {
           console.log('[Clerk Webhook] Creating new user with email:', email);
           const newUser = await prisma.user.create({ data: { clerkId, email, firstName, lastName, avatarUrl } });
           console.log('[Clerk Webhook] User created successfully:', newUser.id);
           
-          // Sync role to Clerk after creation
-          await syncRoleToClerk(clerkId, newUser.role).catch(e => 
-            console.error('Failed to sync role to Clerk:', e)
+          // --- NEW SYNC LOGIC (Creation) ---
+          await SyncService.syncNeonToClerk(newUser.id).catch(e => 
+            console.error('Failed to sync role to Clerk during creation:', e)
           );
+          // ---------------------------------
+          
+          // --- NEW LOGIC: Award Badge on Creation (Fire and Forget) ---
+          BadgeService.awardBadge(newUser.id, 'early-bird').catch(e =>
+            console.error('[Clerk Webhook] Failed to award Early-Bird badge:', e)
+          );
+          // -----------------------------------------------------------
           
           // Send welcome email (fire and forget to avoid blocking webhook response)
           EmailService.sendWelcomeEmail(email, firstName || 'Student')

@@ -55,8 +55,20 @@ enum AcademicCalendar {
 
 enum TestPolicy {
   REQUIRED
-  TEST_OPTIONAL
-  TEST_BLIND
+  OPTIONAL
+  BLIND
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  VERIFIED
+}
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
 }
 
 // --- Core Models ---
@@ -83,6 +95,12 @@ model User {
   hobbies                String[]
   languagesSpoken        String[]
   
+  // Referral System
+  referralCode String? @unique
+  referredBy   String?
+  referrer     User?   @relation("UserReferrals", fields: [referredBy], references: [id])
+  referrals    User[]  @relation("UserReferrals")
+  
   role UserRole @default(USER)
 
   // Relations
@@ -93,6 +111,13 @@ model User {
   reviews           Review[]
   comments          Comment[]
   notifications     Notification[]
+  universityClaims  UniversityClaim[]
+  reviewedClaims    UniversityClaim[] @relation("ClaimReviewer")
+  claimedUniversities University[] @relation("UniversityClaim")
+  claimedUniversityGroups UniversityGroup[] @relation("UniversityGroupClaim")
+  referralsGiven    Referral[] @relation("Referrer")
+  referralsReceived Referral[] @relation("Referred")
+  badges            UserBadge[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -209,6 +234,12 @@ model University {
   microContent MicroContent[] // 1:N relation
   savedBy SavedUniversity[]
   reviews Review[]
+  claims UniversityClaim[]
+  
+  // Claim ownership
+  claimedBy User? @relation("UniversityClaim", fields: [claimedById], references: [id])
+  claimedById String?
+  claimedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -233,6 +264,38 @@ model SavedUniversity {
   createdAt DateTime @default(now())
 
   @@unique([userId, universityId])
+}
+
+model UniversityClaim {
+  id                    String      @id @default(uuid())
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String
+  university            University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  universityId          String?
+  universityGroup       UniversityGroup? @relation(fields: [universityGroupId], references: [id], onDelete: Cascade)
+  universityGroupId     String?
+  status                ClaimStatus @default(PENDING)
+  requesterName         String      @default("")
+  requesterEmail        String      @default("")
+  institutionalEmail    String
+  verificationDocuments String[]    // URLs to verification documents
+  position              String?
+  department            String?
+  comments              String?     @db.Text
+  
+  reviewedBy            User?       @relation("ClaimReviewer", fields: [reviewedById], references: [id])
+  reviewedById          String?
+  reviewedAt            DateTime?
+  adminNotes            String?     @db.Text
+  expiresAt             DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([universityId])
+  @@index([universityGroupId])
+  @@index([status])
 }
 
 model FinancialProfile {
@@ -282,6 +345,22 @@ model Notification {
 
   @@index([userId])
   @@index([isRead])
+}
+
+model Referral {
+  id             String         @id @default(uuid())
+  referrer       User           @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referrerId     String
+  referredUser   User           @relation("Referred", fields: [referredUserId], references: [id], onDelete: Cascade)
+  referredUserId String         @unique
+  status         ReferralStatus @default(PENDING)
+  rewardClaimed  Boolean        @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([referrerId])
+  @@index([status])
 }
 
 // --- Content Management System (Restored) ---
@@ -403,6 +482,12 @@ model UniversityGroup {
   memberCount Int        @default(0)
 
   universities University[] @relation("GroupMembership") // M:N relation
+  claims       UniversityClaim[]
+  
+  // Claim ownership
+  claimedBy User? @relation("UniversityGroupClaim", fields: [claimedById], references: [id])
+  claimedById String?
+  claimedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -437,4 +522,36 @@ model StaticPage {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// --- Gamification System ---
+
+model Badge {
+  id          String     @id @default(uuid())
+  slug        String     @unique
+  name        String
+  description String?    @db.Text
+  iconUrl     String?
+  category    String?
+
+  userBadges  UserBadge[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([category])
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  badgeId   String
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
 }

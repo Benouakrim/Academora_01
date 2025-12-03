@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Zap } from 'lucide-react'
 import api from '@/lib/api'
 import DashboardHeader from './components/DashboardHeader'
 import StatsCards from './components/StatsCards'
@@ -51,8 +51,13 @@ export default function DashboardPage() {
           </section>
           
           <section className="bg-card border rounded-xl p-6 shadow-sm">
-            <h3 className="font-semibold mb-3">Next Steps</h3>
+            <h3 className="font-semibold mb-3">Quick Actions</h3>
             <div className="space-y-3">
+              <Link to="/dashboard/matching-engine">
+                 <Button variant="default" className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white shadow-md">
+                   <Zap className="w-4 h-4 mr-2" /> Launch Matching Engine 
+                 </Button>
+              </Link>
               <Link to="/compare">
                  <Button variant="outline" className="w-full justify-start">Compare Schools</Button>
               </Link>

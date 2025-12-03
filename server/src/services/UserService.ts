@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../utils/AppError';
+import { ReferralService } from './ReferralService';
 
 const prisma = new PrismaClient();
 
@@ -30,7 +31,37 @@ export class UserService {
       },
     });
     if (!user) throw new AppError(404, 'User not found');
-    return user;
+    
+    // Ensure user has a referral code
+    await ReferralService.ensureReferralCode(user.id);
+    
+    // Refetch user to include the referral code in response
+    const updatedUser = await prisma.user.findUnique({
+      where: { clerkId },
+      include: {
+        financialProfile: true,
+        savedUniversities: {
+          include: { 
+            university: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                city: true,
+                state: true,
+                country: true,
+                logoUrl: true,
+                tuitionOutState: true,
+                tuitionInternational: true,
+              }
+            } 
+          },
+          orderBy: { createdAt: 'desc' }
+        },
+      },
+    });
+    
+    return updatedUser;
   }
 
   static async updateProfile(clerkId: string, data: any) {
