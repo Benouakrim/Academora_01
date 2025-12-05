@@ -19,6 +19,7 @@ const UniversityClaimPage = lazy(() => import('@/pages/university/UniversityClai
 const BlogPage = lazy(() => import('@/pages/blog/BlogPage'));
 const ArticlePage = lazy(() => import('@/pages/blog/ArticlePage'));
 const UserArticleEditor = lazy(() => import('@/pages/blog/UserArticleEditor'));
+const CMSDemo = lazy(() => import('@/pages/CMSDemo'));
 const StaticContentPage = lazy(() => import('@/pages/StaticContentPage'));
 const PricingPage = lazy(() => import('@/pages/PricingPage'));
 
@@ -77,6 +78,7 @@ export default function App() {
               <Route path="contact" element={<StaticContentPage slug="contact" />} />
               <Route path="privacy" element={<StaticContentPage slug="privacy" />} />
               <Route path="terms" element={<StaticContentPage slug="terms" />} />
+              <Route path="cms-demo" element={<CMSDemo />} />
               <Route path="sign-in/*" element={<SignIn routing="path" path="/sign-in" afterSignInUrl="/dashboard" />} />
               <Route path="sign-up/*" element={<SignUp routing="path" path="/sign-up" afterSignUpUrl="/dashboard" />} />
             </Route>
