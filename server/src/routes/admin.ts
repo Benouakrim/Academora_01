@@ -39,6 +39,12 @@ router.patch('/claims/:id/review',
   ClaimController.reviewClaim
 );
 
+// GET /api/admin/claims/:id/documents - Get all documents for a claim
+router.get('/claims/:id/documents', requireAdmin, ClaimController.getClaimDocuments);
+
+// PATCH /api/admin/documents/:id/review - Review a specific document
+router.patch('/documents/:id/review', requireAdmin, ClaimController.reviewDocument);
+
 // --- NEW SYSTEM INTEGRITY & POWER TOOLS ROUTES ---
 
 // GET /api/admin/health/cache - Get cache performance status

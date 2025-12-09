@@ -1,5 +1,3 @@
-// server/prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,11 +6,663 @@ datasource db {
   provider = "postgresql"
 }
 
-// --- Enums ---
+model User {
+  id                      String            @id @default(uuid())
+  clerkId                 String            @unique
+  email                   String            @unique
+  firstName               String?
+  lastName                String?
+  avatarUrl               String?
+  gpa                     Float?
+  satScore                Int?
+  actScore                Int?
+  preferredMajor          String?
+  dreamJobTitle           String?
+  careerGoals             String[]
+  preferredLearningStyle  String?
+  personalityType         String?
+  hobbies                 String[]
+  languagesSpoken         String[]
+  role                    UserRole          @default(USER)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  referralCode            String?           @unique
+  referredBy              String?
+  accountType             String?
+  focusArea               String?
+  onboarded               Boolean           @default(false)
+  onboardingAnswers       Json?
+  organizationName        String?
+  personaRole             String?
+  primaryGoal             String?
+  onboardingSkipped       Boolean           @default(false)
+  profileSettings         Json?
+  profileVisibility       ProfileVisibility @default(PRIVATE)
+  username                String?           @unique
+  academicProfile         AcademicProfile?
+  analysisWeights         AnalysisWeights?
+  articles                Article[]            @relation("ArticleAuthor")
+  reviewedArticles        Article[]            @relation("ArticleReviewer")
+  articleLikes            ArticleLike[]
+  ClaimMessage            ClaimMessage[]
+  comments                Comment[]
+  reviewedDocuments       DocumentApproval[]   @relation("DocumentReviewer")
+  comparisons             Comparison[]
+  financialProfile        FinancialProfile?
+  notifications           Notification[]
+  referralsReceived       Referral?         @relation("Referred")
+  referralsGiven          Referral[]        @relation("Referrer")
+  reviews                 Review[]
+  savedUniversities       SavedUniversity[]
+  claimedUniversities     University[]      @relation("UniversityClaim")
+  reviewedClaims          UniversityClaim[] @relation("ClaimReviewer")
+  universityClaims        UniversityClaim[]
+  claimedUniversityGroups UniversityGroup[] @relation("UniversityGroupClaim")
+  referrer                User?             @relation("UserReferrals", fields: [referredBy], references: [id])
+  referrals               User[]            @relation("UserReferrals")
+  badges                  UserBadge[]
+
+  @@index([clerkId])
+  @@index([username])
+}
+
+model University {
+  id                       String                     @id @default(uuid())
+  slug                     String                     @unique
+  name                     String
+  shortName                String?
+  description              String?
+  logoUrl                  String?
+  heroImageUrl             String?
+  websiteUrl               String?
+  established              Int?
+  address                  String?
+  city                     String
+  state                    String?
+  zipCode                  String?
+  country                  String                     @default("USA")
+  latitude                 Float?
+  longitude                Float?
+  climateZone              String?
+  nearestAirport           String?
+  region                   String?
+  type                     InstitutionType?
+  classification           String?
+  religiousAffiliation     String?
+  setting                  CampusSetting?
+  campusSizeAcres          Int?
+  acceptanceRate           Float?
+  applicationFee           Int?
+  commonAppAccepted        Boolean                    @default(false)
+  applicationDeadline      DateTime?
+  earlyDecisionDeadline    DateTime?
+  testPolicy               TestPolicy?
+  minGpa                   Float?
+  avgGpa                   Float?
+  satMath25                Int?
+  satMath75                Int?
+  satVerbal25              Int?
+  satVerbal75              Int?
+  actComposite25           Int?
+  actComposite75           Int?
+  avgSatScore              Int?
+  avgActScore              Int?
+  internationalEngReqs     Json?
+  tuitionInState           Int?
+  tuitionOutState          Int?
+  tuitionInternational     Int?
+  roomAndBoard             Int?
+  booksAndSupplies         Int?
+  costOfLiving             Int?
+  percentReceivingAid      Float?
+  averageGrantAid          Int?
+  averageNetPrice          Int?
+  scholarshipsIntl         Boolean                    @default(false)
+  needBlindAdmission       Boolean                    @default(false)
+  studentPopulation        Int?
+  undergraduatePopulation  Int?
+  graduatePopulation       Int?
+  studentFacultyRatio      Float?
+  percentMale              Float?
+  percentFemale            Float?
+  percentInternational     Float?
+  diversityScore           Float?
+  graduationRate           Float?
+  retentionRate            Float?
+  employmentRate           Float?
+  averageStartingSalary    Int?
+  internshipSupport        Int?
+  alumniNetwork            Int?
+  visaDurationMonths       Int?
+  academicCalendar         AcademicCalendar?
+  sportsDivision           String?
+  hasHousing               Boolean                    @default(true)
+  studentLifeScore         Float?
+  safetyRating             Float?
+  partySceneRating         Float?
+  popularMajors            String[]
+  degreeLevels             String[]
+  languages                String[]
+  studentLifeTags          String[]
+  rankings                 Json?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  claimedAt                DateTime?
+  claimedById              String?
+  ROIPercentage            Float?
+  alumniEarnings10Years    Int?
+  alumniEarnings5Years     Int?
+  averageSalaryByMajor     Json?
+  citationIndex            Int?
+  fundedResearch           Int?
+  geographicDiversityScore Float?
+  industryPartnerships     String[]
+  internshipPlacementRate  Float?
+  partnerCompaniesCount    Int?
+  researchOutputScore      Float?
+  studentSatisfactionScore Float?
+  timeToEmploymentMonths   Int?
+  riskAssessments          ComparisonRiskAssessment[]
+  microContent             MicroContent[]
+  reviews                  Review[]
+  savedBy                  SavedUniversity[]
+  claimedBy                User?                      @relation("UniversityClaim", fields: [claimedById], references: [id])
+  claims                   UniversityClaim[]
+  metricHistory            UniversityMetricHistory[]
+  groups                   UniversityGroup[]          @relation("GroupMembership")
+
+  @@index([slug])
+  @@index([country])
+  @@index([name])
+  @@index([tuitionOutState])
+  @@index([avgSatScore])
+}
+
+model SavedUniversity {
+  id           String            @id @default(uuid())
+  userId       String
+  universityId String
+  status       ApplicationStatus @default(PLANNED)
+  notes        String?
+  createdAt    DateTime          @default(now())
+  university   University        @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, universityId])
+}
+
+model UniversityClaim {
+  id                    String           @id @default(uuid())
+  userId                String
+  universityId          String?
+  status                ClaimStatus      @default(PENDING)
+  claimType             ClaimType        @default(ACADEMIC_STAFF)
+  institutionalEmail    String
+  verificationDocuments String[]
+  position              String?
+  department            String?
+  comments              String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  adminNotes            String?
+  expiresAt             DateTime?
+  requesterEmail        String           @default("")
+  requesterName         String           @default("")
+  reviewedAt            DateTime?
+  reviewedById          String?
+  universityGroupId     String?
+  viewedAt              DateTime?
+  auditLog              Json?               @default("[]")
+  ClaimMessage          ClaimMessage[]
+  documentApprovals     DocumentApproval[]
+  reviewedBy            User?               @relation("ClaimReviewer", fields: [reviewedById], references: [id])
+  universityGroup       UniversityGroup?    @relation(fields: [universityGroupId], references: [id], onDelete: Cascade)
+  university            University?         @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([universityId])
+  @@index([universityGroupId])
+  @@index([status])
+}
+
+model DocumentApproval {
+  id               String              @id @default(uuid())
+  claimId          String
+  documentUrl      String
+  documentType     String              // "image" or "pdf"
+  documentName     String
+  status           DocumentStatus      @default(PENDING)
+  adminNotes       String?
+  reviewedAt       DateTime?
+  reviewedById     String?
+  canResubmit      Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  claim            UniversityClaim     @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  reviewedBy       User?               @relation("DocumentReviewer", fields: [reviewedById], references: [id])
+
+  @@index([claimId])
+  @@index([status])
+}
+
+model FinancialProfile {
+  id                         String   @id @default(uuid())
+  userId                     String   @unique
+  maxBudget                  Int?
+  householdIncome            Int?
+  familySize                 Int?
+  savings                    Int?
+  investments                Int?
+  expectedFamilyContribution Int?
+  eligibleForPellGrant       Boolean  @default(false)
+  eligibleForStateAid        Boolean  @default(false)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  needsFinancialAid          Boolean  @default(false)
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AcademicProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  gpa              Float?
+  gpaScale         Int?
+  testScores       Json?
+  highSchoolName   String?
+  gradYear         Int?
+  primaryMajor     String?
+  secondaryMajor   String?
+  extracurriculars String[]
+  academicHonors   Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([gradYear])
+  @@index([gpa])
+  @@index([primaryMajor])
+}
+
+model Comparison {
+  id              String                     @id @default(uuid())
+  name            String
+  userId          String
+  universityIds   String[]
+  createdAt       DateTime                   @default(now())
+  description     String?
+  user            User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insights        ComparisonInsight[]
+  riskAssessments ComparisonRiskAssessment[]
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model Referral {
+  id             String         @id @default(uuid())
+  referrerId     String
+  referredUserId String         @unique
+  status         ReferralStatus @default(PENDING)
+  rewardClaimed  Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  rewardAmount   Int            @default(0)
+  referredUser   User           @relation("Referred", fields: [referredUserId], references: [id], onDelete: Cascade)
+  referrer       User           @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+  @@index([status])
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  articles    Article[]
+}
+
+model Tag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  articles  Article[] @relation("ArticleToTag")
+}
+
+model Article {
+  id              String              @id @default(uuid())
+  slug            String              @unique
+  title           String
+  excerpt         String?
+  content         String
+  featuredImage   String?
+  status          ArticleStatus       @default(DRAFT)
+  publishedAt     DateTime?
+  metaTitle       String?
+  metaDescription String?
+  authorId        String
+  categoryId      String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  viewCount       Int                 @default(0)
+  canonicalUrl    String?
+  focusKeyword    String?
+  likeCount       Int                 @default(0)
+  ogImage         String?
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedById    String?
+  shareCount      Int                 @default(0)
+  author          User                @relation("ArticleAuthor", fields: [authorId], references: [id])
+  category        Category?           @relation(fields: [categoryId], references: [id])
+  reviewedBy      User?               @relation("ArticleReviewer", fields: [reviewedById], references: [id])
+  analytics       ArticleAnalytics[]
+  likes           ArticleLike[]
+  predictions     ArticlePrediction[]
+  comments        Comment[]
+  tags            Tag[]               @relation("ArticleToTag")
+
+  @@index([slug])
+  @@index([status])
+  @@index([authorId])
+}
+
+model ArticleLike {
+  id        String   @id @default(uuid())
+  articleId String
+  userId    String
+  createdAt DateTime @default(now())
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, userId])
+  @@index([articleId])
+  @@index([userId])
+}
+
+model ArticleAnalytics {
+  id        String   @id @default(uuid())
+  articleId String
+  date      DateTime @default(now())
+  views     Int      @default(0)
+  likes     Int      @default(0)
+  comments  Int      @default(0)
+  shares    Int      @default(0)
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, date])
+  @@index([articleId])
+  @@index([date])
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  content   String
+  articleId String
+  userId    String
+  parentId  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  downvotes Int       @default(0)
+  upvotes   Int       @default(0)
+  article   Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentThread", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentThread")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id             String       @id @default(uuid())
+  rating         Float
+  academicRating Float?
+  campusRating   Float?
+  socialRating   Float?
+  careerRating   Float?
+  title          String?
+  content        String
+  status         ReviewStatus @default(PENDING)
+  universityId   String
+  userId         String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  anonymous      Boolean      @default(false)
+  helpfulCount   Int          @default(0)
+  verified       Boolean      @default(false)
+  university     University   @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, universityId])
+  @@index([universityId])
+  @@index([status])
+}
+
+model UniversityGroup {
+  id           String            @id @default(uuid())
+  name         String
+  slug         String            @unique
+  description  String?
+  logoUrl      String?
+  website      String?
+  memberCount  Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  claimedAt    DateTime?
+  claimedById  String?
+  claims       UniversityClaim[]
+  claimedBy    User?             @relation("UniversityGroupClaim", fields: [claimedById], references: [id])
+  universities University[]      @relation("GroupMembership")
+}
+
+model MicroContent {
+  id           String     @id @default(uuid())
+  universityId String
+  category     String
+  title        String
+  content      String
+  priority     Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  university   University @relation(fields: [universityId], references: [id])
+
+  @@index([universityId])
+}
+
+model StaticPage {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  title           String
+  content         String
+  metaTitle       String?
+  metaDescription String?
+  published       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  slug        String      @unique
+  name        String
+  description String?
+  iconUrl     String?
+  category    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  userBadges  UserBadge[]
+
+  @@index([slug])
+  @@index([category])
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  badgeId   String
+  awardedAt DateTime @default(now())
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
+}
+
+model UniversityMetricHistory {
+  id             String     @id @default(uuid())
+  universityId   String
+  year           Int
+  ranking        Int?
+  acceptanceRate Float?
+  tuitionCost    Int?
+  employmentRate Float?
+  averageSalary  Int?
+  studentCount   Int?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  university     University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@unique([universityId, year])
+  @@index([universityId])
+  @@index([year])
+}
+
+model AnalysisWeights {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  ranking             Float    @default(0.25)
+  cost                Float    @default(0.25)
+  acceptance          Float    @default(0.15)
+  employmentRate      Float    @default(0.15)
+  studentSatisfaction Float    @default(0.10)
+  research            Float    @default(0.10)
+  targetSalary        Int?
+  careerFocus         String?
+  preferredLocation   String?
+  internshipImportant Boolean  @default(false)
+  researchImportant   Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ComparisonRiskAssessment {
+  id               String     @id @default(uuid())
+  comparisonId     String
+  universityId     String
+  riskFactors      Json
+  overallRiskScore Float
+  recommendations  String[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  comparison       Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  university       University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@unique([comparisonId, universityId])
+  @@index([comparisonId])
+  @@index([universityId])
+}
+
+model ComparisonInsight {
+  id           String     @id @default(uuid())
+  comparisonId String
+  insight      String
+  insightType  String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+
+  @@index([comparisonId])
+  @@index([insightType])
+}
+
+model ArticlePrediction {
+  id        String   @id @default(uuid())
+  articleId String
+  inputHash String   @unique
+  features  Json
+  result    Json
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@index([inputHash])
+  @@index([createdAt])
+}
+
+model SystemBenchmark {
+  id                 String   @id @default(uuid())
+  category           String   @unique
+  rpm                Float
+  avgSearchVolume    Int
+  avgCTR             Float
+  seasonalMultiplier Float    @default(1.0)
+  competitionLevel   Int      @default(5)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([category])
+}
+
+model Video {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  url          String
+  publicId     String?
+  type         String
+  thumbnailUrl String?
+  position     Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, position])
+  @@index([createdAt])
+}
+
+model ClaimMessage {
+  id                 String            @id
+  claimId            String
+  senderId           String
+  senderRole         String
+  content            String
+  type               CommunicationType @default(CHAT)
+  requestedDocuments String[]
+  attachments        String[]
+  dataRequestSchema  Json?
+  submittedData      Json?
+  read               Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  UniversityClaim    UniversityClaim   @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  User               User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([claimId])
+  @@index([senderId])
+}
+
 enum UserRole {
   USER
-  PREMIUM
   ADMIN
+  PREMIUM
 }
 
 enum ApplicationStatus {
@@ -25,10 +675,10 @@ enum ApplicationStatus {
 
 enum ArticleStatus {
   DRAFT
-  PENDING
-  REJECTED
   PUBLISHED
   ARCHIVED
+  PENDING
+  REJECTED
 }
 
 enum ReviewStatus {
@@ -66,6 +716,30 @@ enum ClaimStatus {
   APPROVED
   REJECTED
   VERIFIED
+  UNDER_REVIEW
+  ACTION_REQUIRED
+  PENDING_DOCUMENTS
+  ARCHIVED
+}
+
+enum ClaimType {
+  ACADEMIC_STAFF
+  ALUMNI
+  STUDENT
+  ADMINISTRATIVE_STAFF
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REPLACED
+}
+
+enum CommunicationType {
+  CHAT
+  DOCUMENT_REQUEST
+  INTERNAL_NOTE
 }
 
 enum ReferralStatus {
@@ -78,768 +752,3 @@ enum ProfileVisibility {
   PRIVATE
   FOLLOWERS_ONLY
 }
-
-// --- Core Models ---
-
-model User {
-  id        String  @id @default(uuid())
-  clerkId   String  @unique // Links to Clerk Auth
-  email     String  @unique
-  firstName String?
-  lastName  String?
-  avatarUrl String?
-  username  String? @unique // For public profile URL
-
-  // --- Profile Privacy & Visibility ---
-  profileVisibility ProfileVisibility @default(PRIVATE)
-  profileSettings   Json? // Granular field visibility: { showEmail, showBadges, showAcademics, showSavedCount, etc }
-
-  // --- Onboarding System ---
-  onboarded         Boolean @default(false)
-  onboardingSkipped Boolean @default(false)
-  accountType       String? // 'INDIVIDUAL' or 'ORGANIZATION'
-  personaRole       String? // For individuals: e.g., 'STUDENT', 'PROFESSIONAL'
-  focusArea         String? // For individuals: e.g., 'COMPUTER_SCIENCE', 'BUSINESS'
-  primaryGoal       String? // For individuals: e.g., 'FIND_FINANCIAL_AID', 'CAREER_MATCHING'
-  organizationName  String? // For organizations: Name of the organization
-  onboardingAnswers Json?   // Flexible JSONB store for raw questionnaire data
-
-  // --- Extended Academic Profile (Legacy Port) ---
-  gpa            Float?
-  satScore       Int?
-  actScore       Int?
-  preferredMajor String?
-  
-  // New Legacy Fields
-  dreamJobTitle          String?
-  careerGoals            String[] // Legacy: text[]
-  preferredLearningStyle String?
-  personalityType        String?
-  hobbies                String[]
-  languagesSpoken        String[]
-  
-  // Referral System
-  referralCode String? @unique
-  referredBy   String?
-  referrer     User?   @relation("UserReferrals", fields: [referredBy], references: [id])
-  referrals    User[]  @relation("UserReferrals")
-  
-  role UserRole @default(USER)
-
-  // Relations
-  academicProfile   AcademicProfile?
-  financialProfile  FinancialProfile?
-  analysisWeights   AnalysisWeights?
-  savedUniversities SavedUniversity[]
-  comparisons       Comparison[]
-  articles          Article[] @relation("ArticleAuthor")
-  reviewedArticles  Article[] @relation("ArticleReviewer")
-  articleLikes      ArticleLike[]
-  reviews           Review[]
-  comments          Comment[]
-  notifications     Notification[]
-  universityClaims  UniversityClaim[]
-  reviewedClaims    UniversityClaim[] @relation("ClaimReviewer")
-  claimedUniversities University[] @relation("UniversityClaim")
-  claimedUniversityGroups UniversityGroup[] @relation("UniversityGroupClaim")
-  referralsGiven    Referral[] @relation("Referrer")
-  referralsReceived Referral[] @relation("Referred")
-  badges            UserBadge[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([clerkId])
-  @@index([username])
-}
-
-model University {
-  id           String  @id @default(uuid())
-  slug         String  @unique
-  name         String
-  shortName    String? // Legacy: short_name
-  description  String? @db.Text
-  logoUrl      String?
-  heroImageUrl String?
-  websiteUrl   String?
-  established  Int?    // Legacy: established_year
-
-  // --- Location & Contact ---
-  address   String?
-  city      String
-  state     String?
-  zipCode   String?
-  country   String  @default("USA")
-  latitude  Float?
-  longitude Float?
-  
-  // Legacy Location Fields
-  climateZone         String?
-  nearestAirport      String?
-  region              String? // E.g. "Northeast"
-
-  // --- Classification ---
-  type                 InstitutionType? // Legacy: institution_type
-  classification       String? // e.g., "Research University"
-  religiousAffiliation String?
-  setting              CampusSetting?   // Legacy: campus_setting
-  campusSizeAcres      Int?
-
-  // --- Admissions Stats ---
-  acceptanceRate        Float? // 0.0 to 1.0
-  applicationFee        Int?
-  commonAppAccepted     Boolean   @default(false)
-  applicationDeadline   DateTime?
-  earlyDecisionDeadline DateTime?
-  
-  // Legacy Admissions Fields
-  testPolicy            TestPolicy? // Legacy: standardized_test_policy
-  minGpa                Float?
-  avgGpa                Float?
-  satMath25             Int?
-  satMath75             Int?
-  satVerbal25           Int?
-  satVerbal75           Int?
-  actComposite25        Int?
-  actComposite75        Int?
-  avgSatScore           Int?
-  avgActScore           Int?
-  internationalEngReqs  Json?     // Legacy: international_english_reqs (toefl/ielts)
-
-  // --- Costs & Financials ---
-  tuitionInState        Int?
-  tuitionOutState       Int?
-  tuitionInternational  Int?      // Legacy: tuition_international
-  roomAndBoard          Int?
-  booksAndSupplies      Int?
-  costOfLiving          Int?      // Legacy: cost_of_living_est
-  
-  // --- Financial Aid ---
-  percentReceivingAid   Float?    // 0.0 to 1.0
-  averageGrantAid       Int?
-  averageNetPrice       Int?
-  scholarshipsIntl      Boolean   @default(false) // Legacy: scholarships_international
-  needBlindAdmission    Boolean   @default(false) // Legacy: need_blind_admission
-
-  // --- Student Body ---
-  studentPopulation       Int?
-  undergraduatePopulation Int?
-  graduatePopulation      Int?
-  studentFacultyRatio     Float?
-  percentMale             Float?
-  percentFemale           Float?
-  percentInternational    Float?    // Legacy: percentage_international
-  diversityScore          Float?    // 0.0 to 1.0
-
-  // --- Outcomes & Success Metrics ---
-  graduationRate        Float?
-  retentionRate         Float?
-  employmentRate        Float?    // Legacy: employment_rate_6mo (6-month employment rate)
-  averageStartingSalary Int?
-  
-  // Advanced Success Metrics
-  timeToEmploymentMonths Int?     // Average months to get first job
-  averageSalaryByMajor   Json?    // { "CS": 120000, "Business": 85000 }
-  ROIPercentage          Float?   // Return on investment percentage
-  alumniEarnings5Years   Int?     // Average salary 5 years after graduation
-  alumniEarnings10Years  Int?     // Average salary 10 years after graduation
-  
-  // Legacy Future/Outcome Fields
-  internshipSupport     Int?      // 1-5 scale
-  alumniNetwork         Int?      // 1-5 scale
-  visaDurationMonths    Int?      // Legacy: post_study_work_visa_months
-  
-  // Research & Academic Excellence
-  researchOutputScore    Float?   // 0-100 scale based on publications/citations
-  citationIndex          Int?     // H-index for research output
-  fundedResearch         Int?     // Annual funded research in millions
-  
-  // Industry Partnerships & Opportunities
-  partnerCompaniesCount  Int?     // Number of industry partners
-  industryPartnerships   String[] // List of major partner companies
-  
-  // Additional Metrics
-  studentSatisfactionScore Float?  // 0-5 scale (from surveys)
-  geographicDiversityScore Float?  // 0-1 scale for geographic distribution
-  internshipPlacementRate  Float?  // 0-1 scale (percentage of students with internships)
-
-  // --- Campus Life & Academics ---
-  academicCalendar      AcademicCalendar? // Legacy: academic_calendar
-  sportsDivision        String?
-  hasHousing            Boolean @default(true)
-  studentLifeScore      Float?    // 0.0 to 5.0
-  safetyRating          Float?    // 0.0 to 5.0
-  partySceneRating      Float?    // 0.0 to 5.0
-  
-  // Arrays & Metadata
-  popularMajors         String[]
-  degreeLevels          String[]  // Legacy: degree_levels_offered
-  languages             String[]  // Legacy: languages_of_instruction
-  studentLifeTags       String[]  // Legacy: student_life_tags
-  rankings              Json?     // { "usNews": 5, "forbes": 12 }
-
-  // --- Relations ---
-  groups      UniversityGroup[] @relation("GroupMembership") // M:N relation
-  microContent MicroContent[] // 1:N relation
-  savedBy SavedUniversity[]
-  reviews Review[]
-  claims UniversityClaim[]
-  metricHistory UniversityMetricHistory[] // Historical metrics for trends
-  riskAssessments ComparisonRiskAssessment[] // Risk assessment snapshots
-  
-  // Claim ownership
-  claimedBy User? @relation("UniversityClaim", fields: [claimedById], references: [id])
-  claimedById String?
-  claimedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([slug])
-  @@index([country])
-  @@index([name])
-  @@index([tuitionOutState])
-  @@index([avgSatScore])
-}
-
-model SavedUniversity {
-  id           String     @id @default(uuid())
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       String
-  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  universityId String
-
-  status ApplicationStatus @default(PLANNED)
-  notes  String? @db.Text
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, universityId])
-}
-
-model UniversityClaim {
-  id                    String      @id @default(uuid())
-  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                String
-  university            University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  universityId          String?
-  universityGroup       UniversityGroup? @relation(fields: [universityGroupId], references: [id], onDelete: Cascade)
-  universityGroupId     String?
-  status                ClaimStatus @default(PENDING)
-  requesterName         String      @default("")
-  requesterEmail        String      @default("")
-  institutionalEmail    String
-  verificationDocuments String[]    // URLs to verification documents
-  position              String?
-  department            String?
-  comments              String?     @db.Text
-  
-  reviewedBy            User?       @relation("ClaimReviewer", fields: [reviewedById], references: [id])
-  reviewedById          String?
-  reviewedAt            DateTime?
-  adminNotes            String?     @db.Text
-  expiresAt             DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([universityId])
-  @@index([universityGroupId])
-  @@index([status])
-}
-
-model FinancialProfile {
-  id String @id @default(uuid())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String @unique // 1:1 relation to User
-
-  // Core Financials
-  maxBudget Int?        // Annual budget
-  householdIncome Int?
-  familySize Int?
-
-  // Extended Financials (from legacy schema)
-  savings Int?
-  investments Int?
-  expectedFamilyContribution Int?
-  eligibleForPellGrant Boolean @default(false)
-  eligibleForStateAid Boolean @default(false)
-  needsFinancialAid Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model AcademicProfile {
-  id     String @id @default(uuid())
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String @unique // 1:1 relation to User
-
-  // --- Core Academic Metrics ---
-  gpa              Float?  // Current GPA
-  gpaScale         Int?    // GPA scale (e.g., 4, 5, 10, 100)
-  
-  // --- Standardized Test Scores (Flexible JSON Storage) ---
-  // Structure: { "SAT": { "total": 1450, "math": 750, "verbal": 700, "date": "2024-05" }, 
-  //              "ACT": { "composite": 32, "english": 34, "math": 30, "reading": 33, "science": 31 },
-  //              "AP": [{ "subject": "Calculus BC", "score": 5, "year": 2023 }],
-  //              "IB": { "predicted": 42, "subjects": [...] } }
-  testScores       Json?
-
-  // --- High School Information ---
-  highSchoolName   String? // Name of current/previous high school
-  gradYear         Int?    // Expected or actual graduation year
-
-  // --- Intended Majors ---
-  primaryMajor     String? // Primary field of study interest
-  secondaryMajor   String? // Secondary/alternate field of study
-
-  // --- Extracurricular Activities ---
-  // Array of activity descriptions (e.g., ["Student Council President", "Varsity Soccer Captain", "Debate Team"])
-  extracurriculars String[]
-
-  // --- Academic Honors & Awards ---
-  // Structure: [{ "name": "National Merit Scholar", "year": 2024, "level": "National" },
-  //             { "name": "Science Olympiad Gold Medal", "year": 2023, "level": "State" }]
-  academicHonors   Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([gradYear])
-  @@index([gpa])
-  @@index([primaryMajor])
-}
-
-model Comparison {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-
-  universityIds String[]
-  
-  // Relations to analysis data
-  riskAssessments ComparisonRiskAssessment[]
-  insights        ComparisonInsight[]
-
-  createdAt DateTime @default(now())
-}
-
-model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  type      String   // E.g., "SYSTEM", "REVIEW_APPROVED", "COMMENT_REPLY"
-  title     String
-  message   String   @db.Text
-  link      String?  // Internal link to redirect to (e.g., "/blog/article-1")
-  
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([isRead])
-}
-
-model Referral {
-  id             String         @id @default(uuid())
-  referrer       User           @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
-  referrerId     String
-  referredUser   User           @relation("Referred", fields: [referredUserId], references: [id], onDelete: Cascade)
-  referredUserId String         @unique
-  status         ReferralStatus @default(PENDING)
-  rewardClaimed  Boolean        @default(false)
-  rewardAmount   Int            @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([referrerId])
-  @@index([status])
-}
-
-// --- Content Management System (Restored) ---
-
-model Category {
-  id          String    @id @default(uuid())
-  name        String
-  slug        String    @unique
-  description String?
-  articles    Article[]
-
-  createdAt DateTime @default(now())
-}
-
-model Tag {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  slug      String    @unique
-  articles  Article[]
-
-  createdAt DateTime @default(now())
-}
-
-model Article {
-  id            String  @id @default(uuid())
-  slug          String  @unique
-  title         String
-  excerpt       String? @db.Text
-  content       String  @db.Text
-  featuredImage String?
-  status        ArticleStatus @default(DRAFT)
-  publishedAt   DateTime?
-  
-  // Analytics
-  viewCount     Int @default(0)
-  likeCount     Int @default(0)
-  shareCount    Int @default(0)
-  
-  // SEO
-  metaTitle       String?
-  metaDescription String?
-  focusKeyword    String?
-  canonicalUrl    String?
-  ogImage         String?
-
-  // Review & Moderation
-  rejectionReason String? @db.Text
-  reviewedAt      DateTime?
-  reviewedById    String?
-  reviewedBy      User?    @relation("ArticleReviewer", fields: [reviewedById], references: [id])
-
-  // Relations
-  authorId String
-  author   User   @relation("ArticleAuthor", fields: [authorId], references: [id])
-
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
-  
-  tags      Tag[]
-  comments Comment[]
-  likes    ArticleLike[]
-  analytics ArticleAnalytics[]
-  predictions ArticlePrediction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([slug])
-  @@index([status])
-  @@index([authorId])
-}
-
-model ArticleLike {
-  id        String   @id @default(uuid())
-  articleId String
-  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@unique([articleId, userId])
-  @@index([articleId])
-  @@index([userId])
-}
-
-model ArticleAnalytics {
-  id         String   @id @default(uuid())
-  articleId  String
-  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  date       DateTime @default(now())
-  views      Int      @default(0)
-  likes      Int      @default(0)
-  comments   Int      @default(0)
-  shares     Int      @default(0)
-  
-  @@unique([articleId, date])
-  @@index([articleId])
-  @@index([date])
-}
-
-model Comment {
-  id      String @id @default(uuid())
-  content String @db.Text
-
-  articleId String
-  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  parentId String?
-  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id])
-  replies  Comment[] @relation("CommentThread")
-
-  // Engagement Fields
-  upvotes   Int @default(0)
-  downvotes Int @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Review {
-  id     String @id @default(uuid())
-  rating Float // Overall rating 1-5
-
-  // Detailed Breakdown
-  academicRating Float?
-  campusRating   Float?
-  socialRating   Float?
-  careerRating   Float?
-
-  title   String?
-  content String       @db.Text
-  status  ReviewStatus @default(PENDING)
-
-  // Engagement Fields
-  helpfulCount Int     @default(0)
-  verified     Boolean @default(false)
-  anonymous    Boolean @default(false)
-
-  universityId String
-  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, universityId])
-  @@index([universityId])
-  @@index([status])
-}
-
-model UniversityGroup {
-  id          String     @id @default(uuid())
-  name        String
-  slug        String     @unique
-  description String?    @db.Text
-  logoUrl     String?
-  website     String?
-  memberCount Int        @default(0)
-
-  universities University[] @relation("GroupMembership") // M:N relation
-  claims       UniversityClaim[]
-  
-  // Claim ownership
-  claimedBy User? @relation("UniversityGroupClaim", fields: [claimedById], references: [id])
-  claimedById String?
-  claimedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model MicroContent {
-  id          String     @id @default(uuid())
-  university  University @relation(fields: [universityId], references: [id])
-  universityId String
-  
-  category    String     // e.g., "application_tips"
-  title       String
-  content     String     @db.Text
-  priority    Int        @default(0)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([universityId])
-}
-
-model StaticPage {
-  id               String    @id @default(uuid())
-  slug             String    @unique
-  title            String
-  content          String    @db.Text
-  
-  metaTitle        String?
-  metaDescription  String?   @db.Text
-
-  published        Boolean   @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// --- Gamification System ---
-
-model Badge {
-  id          String     @id @default(uuid())
-  slug        String     @unique
-  name        String
-  description String?    @db.Text
-  iconUrl     String?
-  category    String?
-
-  userBadges  UserBadge[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([slug])
-  @@index([category])
-}
-
-model UserBadge {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  badgeId   String
-  awardedAt DateTime @default(now())
-
-  @@unique([userId, badgeId])
-  @@index([userId])
-  @@index([badgeId])
-}
-
-// --- Analysis & Comparison System ---
-
-// Historical metrics for trend analysis
-model UniversityMetricHistory {
-  id              String   @id @default(uuid())
-  university      University @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  universityId    String
-  
-  // Historical snapshots
-  year            Int
-  ranking         Int?
-  acceptanceRate  Float?
-  tuitionCost     Int?
-  employmentRate  Float?
-  averageSalary   Int?
-  studentCount    Int?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@unique([universityId, year])
-  @@index([universityId])
-  @@index([year])
-}
-
-// User's custom analysis weights
-model AnalysisWeights {
-  id              String   @id @default(uuid())
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String
-  
-  // Weight configuration (0-1 scale, should sum close to 1.0)
-  ranking         Float    @default(0.25)
-  cost            Float    @default(0.25)
-  acceptance      Float    @default(0.15)
-  employmentRate  Float    @default(0.15)
-  studentSatisfaction Float @default(0.10)
-  research        Float    @default(0.10)
-  
-  // User profile preferences for matching
-  targetSalary    Int?
-  careerFocus     String?  // e.g., "Tech", "Finance", "Medicine"
-  preferredLocation String?
-  internshipImportant Boolean @default(false)
-  researchImportant Boolean @default(false)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@unique([userId])
-  @@index([userId])
-}
-
-// Risk assessment snapshot for comparisons
-model ComparisonRiskAssessment {
-  id              String   @id @default(uuid())
-  comparison      Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
-  comparisonId    String
-  university      University @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  universityId    String
-  
-  // Risk factors
-  riskFactors     Json     // Array of { factor: string, severity: "low"|"medium"|"high", description: string }
-  overallRiskScore Float   // 0-100 (higher = more risky)
-  recommendations String[] // Array of recommendations
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@unique([comparisonId, universityId])
-  @@index([comparisonId])
-  @@index([universityId])
-}
-
-// Comparative insights (natural language analysis)
-model ComparisonInsight {
-  id              String   @id @default(uuid())
-  comparison      Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
-  comparisonId    String
-  
-  insight         String   @db.Text // Natural language analysis
-  insightType     String   // e.g., "cost_benefit", "career_outcome", "acceptance_difficulty"
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([comparisonId])
-  @@index([insightType])
-}
-
-// --- Article Prediction Storage ---
-model ArticlePrediction {
-  id         String   @id @default(uuid())
-  articleId  String
-  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-
-  inputHash  String   @unique // Unique per content hash to prevent duplicate predictions for same content
-  features   Json     // Extracted ArticleFeatures
-  result     Json     // PredictionResult
-  version    Int      @default(1) // Prediction model version
-
-  createdAt  DateTime @default(now())
-
-  @@index([articleId])
-  @@index([inputHash])
-  @@index([createdAt])
-}
-
-model SystemBenchmark {
-  id        String  @id @default(uuid())
-  category  String  @unique
-  rpm       Float   // Revenue Per Mille (per 1000 pageviews) in USD
-  avgSearchVolume Int
-  avgCTR    Float   // Average click-through rate from search results (0-1)
-  seasonalMultiplier Float @default(1.0)
-  competitionLevel Int @default(5) // 1-10 scale
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([category])
-}
-
-// --- Media Library Models ---
-
-model Video {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  url         String   // Cloudinary URL or YouTube/Vimeo Link
-  publicId    String?  // Cloudinary Public ID (null for external links)
-  type        String   // 'UPLOAD' or 'EXTERNAL'
-  thumbnailUrl String? // Thumbnail for video preview
-  position    Int      @default(0) // Sort order for display
-  isActive    Boolean  @default(true) // Visibility toggle
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([isActive, position])
-  @@index([createdAt])
-}
-

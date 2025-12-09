@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { CheckCircle, XCircle, Clock, ExternalLink, FileText, Building2 } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, ExternalLink, FileText, Building2, Eye, User } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,8 +18,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import type { LucideIcon } from 'lucide-react';
+import { useAllClaims, useReviewClaim } from '@/hooks/useClaims';
+import { DocumentReview } from '@/components/claims/DocumentReview';
 
 type ClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -67,48 +70,35 @@ type ClaimsResponse = {
 export default function AdminClaimsPage() {
   const queryClient = useQueryClient();
   const [selectedClaim, setSelectedClaim] = useState<UniversityClaim | null>(null);
-  const [reviewAction, setReviewAction] = useState<'APPROVED' | 'REJECTED' | null>(null);
+  const [viewMode, setViewMode] = useState<'view' | 'approve' | 'reject' | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [statusFilter, setStatusFilter] = useState<ClaimStatus | 'ALL'>('PENDING');
 
-  const { data, isLoading } = useQuery<ClaimsResponse>({
-    queryKey: ['admin-claims', statusFilter],
-    queryFn: async () => {
-      const params = statusFilter !== 'ALL' ? `?status=${statusFilter}` : '';
-      const res = await api.get(`/admin/claims${params}`);
-      return res.data;
-    },
-  });
+  const { data, isLoading } = useAllClaims(statusFilter === 'ALL' ? undefined : statusFilter);
+  const claims = data?.data || [];
 
-  const reviewMutation = useMutation({
-    mutationFn: async ({ id, status, notes }: { id: string; status: 'APPROVED' | 'REJECTED'; notes?: string }) => {
-      await api.patch(`/admin/claims/${id}/review`, { status, adminNotes: notes });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-claims'] });
-      toast.success('Claim reviewed successfully');
-      setSelectedClaim(null);
-      setReviewAction(null);
-      setAdminNotes('');
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Failed to review claim');
-    },
-  });
+  const reviewMutation = useReviewClaim();
 
-  const handleReview = () => {
-    if (!selectedClaim || !reviewAction) return;
+  const handleReview = (action: 'APPROVED' | 'REJECTED') => {
+    if (!selectedClaim) return;
     reviewMutation.mutate({
-      id: selectedClaim.id,
-      status: reviewAction,
-      notes: adminNotes || undefined,
+      claimId: selectedClaim.id,
+      data: {
+        status: action,
+        adminNotes: adminNotes || undefined,
+      }
+    }, {
+      onSuccess: () => {
+        setSelectedClaim(null);
+        setViewMode(null);
+        setAdminNotes('');
+      }
     });
   };
 
-  const openReviewDialog = (claim: UniversityClaim, action: 'APPROVED' | 'REJECTED') => {
+  const openViewDialog = (claim: UniversityClaim) => {
     setSelectedClaim(claim);
-    setReviewAction(action);
+    setViewMode('view');
     setAdminNotes('');
   };
 
@@ -205,33 +195,44 @@ export default function AdminClaimsPage() {
       header: 'Actions',
       cell: ({ row }) => {
         const claim = row.original;
-        if (claim.status !== 'PENDING') {
-          return (
-            <div className="text-xs text-gray-500">
-              {claim.reviewedAt && `Reviewed ${format(new Date(claim.reviewedAt), 'MMM d')}`}
-            </div>
-          );
-        }
         return (
           <div className="flex items-center gap-2">
             <Button
               size="sm"
               variant="outline"
-              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-              onClick={() => openReviewDialog(claim, 'APPROVED')}
+              onClick={() => openViewDialog(claim)}
             >
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Approve
+              <Eye className="h-4 w-4 mr-1" />
+              View
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => openReviewDialog(claim, 'REJECTED')}
-            >
-              <XCircle className="h-4 w-4 mr-1" />
-              Reject
-            </Button>
+            {claim.status === 'PENDING' && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                  onClick={() => {
+                    setSelectedClaim(claim);
+                    setViewMode('approve');
+                  }}
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    setSelectedClaim(claim);
+                    setViewMode('reject');
+                  }}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Reject
+                </Button>
+              </>
+            )}
           </div>
         );
       },
@@ -247,7 +248,6 @@ export default function AdminClaimsPage() {
     );
   }
 
-  const claims = data?.data || [];
   const stats = {
     pending: claims.filter((c) => c.status === 'PENDING').length,
     approved: claims.filter((c) => c.status === 'APPROVED').length,
@@ -310,99 +310,178 @@ export default function AdminClaimsPage() {
         </Card>
       )}
 
-      <Dialog open={!!selectedClaim && !!reviewAction} onOpenChange={() => {
+      <Dialog open={!!selectedClaim} onOpenChange={() => {
         setSelectedClaim(null);
-        setReviewAction(null);
+        setViewMode(null);
         setAdminNotes('');
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {reviewAction === 'APPROVED' ? 'Approve' : 'Reject'} Claim Request
+              {viewMode === 'approve' ? 'Approve Claim' : viewMode === 'reject' ? 'Reject Claim' : 'Claim Details'}
             </DialogTitle>
             <DialogDescription>
-              Review the claim details before making a decision.
+              {viewMode === 'view' ? 'Review claim information' : 'Review the details before making a decision'}
             </DialogDescription>
           </DialogHeader>
 
           {selectedClaim && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="details">Claim Details</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="user">User Account</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="details" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <Label className="text-xs text-gray-500">Requester</Label>
+                    <p className="font-medium">{selectedClaim.requesterName}</p>
+                    <p className="text-gray-600">{selectedClaim.requesterEmail}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Position</Label>
+                    <p className="font-medium">{selectedClaim.position}</p>
+                    {selectedClaim.department && (
+                      <p className="text-gray-600">{selectedClaim.department}</p>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div>
-                  <Label className="text-xs text-gray-500">Requester</Label>
-                  <p className="font-medium">{selectedClaim.requesterName}</p>
-                  <p className="text-gray-600">{selectedClaim.requesterEmail}</p>
+                  <Label className="text-xs text-gray-500">Target University/Group</Label>
+                  <p className="font-medium">
+                    {selectedClaim.university?.name || selectedClaim.universityGroup?.name}
+                  </p>
                 </div>
+
+                {selectedClaim.comments && (
+                  <>
+                    <Separator />
+                    <div>
+                      <Label className="text-xs text-gray-500">Requester Comments</Label>
+                      <p className="text-sm mt-1 p-3 bg-gray-50 rounded-md">{selectedClaim.comments}</p>
+                    </div>
+                  </>
+                )}
+
+                <Separator />
+
                 <div>
-                  <Label className="text-xs text-gray-500">Position</Label>
-                  <p className="font-medium">{selectedClaim.position}</p>
-                  {selectedClaim.department && (
-                    <p className="text-gray-600">{selectedClaim.department}</p>
-                  )}
+                  <Label className="text-xs text-gray-500">Verification Documents</Label>
+                  <div className="space-y-2 mt-2">
+                    {selectedClaim.verificationDocuments.map((url, idx) => (
+                      <a
+                        key={idx}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 border rounded hover:bg-accent text-sm"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Document {idx + 1}
+                        <ExternalLink className="h-3 w-3 ml-auto" />
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <Label className="text-xs text-gray-500">Target</Label>
-                <p className="font-medium">
-                  {selectedClaim.university?.name || selectedClaim.universityGroup?.name}
-                </p>
-              </div>
+                {(viewMode === 'approve' || viewMode === 'reject') && (
+                  <>
+                    <Separator />
+                    <div>
+                      <Label htmlFor="adminNotes">Admin Notes (Optional)</Label>
+                      <Textarea
+                        id="adminNotes"
+                        value={adminNotes}
+                        onChange={(e) => setAdminNotes(e.target.value)}
+                        placeholder="Add internal notes about this decision..."
+                        rows={3}
+                        className="mt-2"
+                      />
+                    </div>
+                  </>
+                )}
+              </TabsContent>
 
-              {selectedClaim.comments && (
+              <TabsContent value="documents" className="space-y-4 mt-4">
+                <DocumentReview claimId={selectedClaim.id} isAdmin={true} />
+              </TabsContent>
+
+              <TabsContent value="user" className="space-y-4 mt-4">
+                <div className="p-4 border rounded-lg bg-muted">
+                  <div className="flex items-start gap-3">
+                    <User className="h-10 w-10 text-muted-foreground" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">
+                        {selectedClaim.user.firstName} {selectedClaim.user.lastName}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{selectedClaim.user.email}</p>
+                      <Badge className="mt-2">User ID: {selectedClaim.user.id}</Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div>
-                  <Label className="text-xs text-gray-500">Requester Comments</Label>
-                  <p className="text-sm mt-1 p-3 bg-gray-50 rounded-md">{selectedClaim.comments}</p>
+                  <Label className="text-xs text-gray-500 mb-2 block">Claim Information</Label>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Submitted:</strong> {format(new Date(selectedClaim.createdAt), 'PPP')}</p>
+                    <p><strong>Expires:</strong> {format(new Date(selectedClaim.expiresAt), 'PPP')}</p>
+                    {selectedClaim.reviewedAt && (
+                      <p><strong>Reviewed:</strong> {format(new Date(selectedClaim.reviewedAt), 'PPP')}</p>
+                    )}
+                    {selectedClaim.reviewedBy && (
+                      <p>
+                        <strong>Reviewed by:</strong> {selectedClaim.reviewedBy.firstName} {selectedClaim.reviewedBy.lastName}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
 
-              <div>
-                <Label className="text-xs text-gray-500">Verification Documents</Label>
-                <div className="space-y-1 mt-1">
-                  {selectedClaim.verificationDocuments.map((url, idx) => (
-                    <a
-                      key={idx}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      Document {idx + 1}
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="adminNotes">Admin Notes (Optional)</Label>
-                <Textarea
-                  id="adminNotes"
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder="Add internal notes about this decision..."
-                  rows={3}
-                  className="mt-2"
-                />
-              </div>
-            </div>
+                {selectedClaim.adminNotes && (
+                  <>
+                    <Separator />
+                    <div>
+                      <Label className="text-xs text-gray-500">Previous Admin Notes</Label>
+                      <p className="text-sm mt-1 p-3 bg-muted rounded-md">{selectedClaim.adminNotes}</p>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setSelectedClaim(null);
-              setReviewAction(null);
+              setViewMode(null);
               setAdminNotes('');
             }}>
-              Cancel
+              {viewMode === 'view' ? 'Close' : 'Cancel'}
             </Button>
-            <Button
-              onClick={handleReview}
-              disabled={reviewMutation.isPending}
-              className={reviewAction === 'APPROVED' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
-            >
-              {reviewMutation.isPending ? 'Processing...' : `Confirm ${reviewAction === 'APPROVED' ? 'Approval' : 'Rejection'}`}
-            </Button>
+            {viewMode === 'approve' && (
+              <Button
+                onClick={() => handleReview('APPROVED')}
+                disabled={reviewMutation.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {reviewMutation.isPending ? 'Processing...' : 'Confirm Approval'}
+              </Button>
+            )}
+            {viewMode === 'reject' && (
+              <Button
+                onClick={() => handleReview('REJECTED')}
+                disabled={reviewMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {reviewMutation.isPending ? 'Processing...' : 'Confirm Rejection'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

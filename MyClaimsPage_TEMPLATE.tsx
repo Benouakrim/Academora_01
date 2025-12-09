@@ -1,6 +1,12 @@
+// USER CLAIMS PAGE IMPLEMENTATION TEMPLATE
+// File: client/src/pages/dashboard/MyClaimsPage.tsx
+// 
+// This file needs to be created manually. Here's the complete code:
+
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ExternalLink, MessageSquare, Calendar, FileText, Edit, Trash2 } from 'lucide-react';
+import { Plus, ExternalLink, MessageSquare, Calendar, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,16 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -29,40 +25,76 @@ import { StatusStepper } from '@/components/claims/StatusStepper';
 import { ChatInterface, ChatMessage } from '@/components/claims/ChatInterface';
 import { DataRequestForm } from '@/components/claims/DataRequestForm';
 import type { DataRequestSchema } from '@/components/claims/FormBuilder';
-import { 
-  useMyClaims, 
-  useClaimDetails, 
-  usePostMessage, 
-  useSubmitClaimData,
-  useDeleteClaim
-} from '@/hooks/useClaims';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api'; // Adjust import based on your API setup
 
 export default function MyClaimsPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
-  const [claimToDelete, setClaimToDelete] = useState<string | null>(null);
 
   // Fetch user's claims
-  const { data: claimsResponse, isLoading } = useMyClaims();
-  const claims = claimsResponse?.data;
+  const { data: claims, isLoading } = useQuery({
+    queryKey: ['my-claims'],
+    queryFn: async () => {
+      const response = await api.get('/api/claims/my-requests');
+      return response.data.data;
+    },
+  });
 
   // Fetch selected claim details
-  const { data: claimResponse } = useClaimDetails(selectedClaimId);
-  const selectedClaim = claimResponse?.data;
+  const { data: selectedClaim } = useQuery({
+    queryKey: ['claim-detail', selectedClaimId],
+    queryFn: async () => {
+      if (!selectedClaimId) return null;
+      const response = await api.get(`/api/claims/${selectedClaimId}`);
+      return response.data.data;
+    },
+    enabled: !!selectedClaimId,
+  });
 
   // Send message mutation
-  const sendMessageMutation = usePostMessage();
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      const response = await api.post(`/api/claims/${selectedClaimId}/message`, {
+        message,
+        type: 'CHAT',
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['claim-detail', selectedClaimId] });
+    },
+  });
 
   // Submit data mutation
-  const submitDataMutation = useSubmitClaimData();
-
-  // Delete mutation
-  const deleteMutation = useDeleteClaim();
+  const submitDataMutation = useMutation({
+    mutationFn: async (data: { submittedData: Record<string, any>; documents: string[] }) => {
+      const response = await api.post(`/api/claims/${selectedClaimId}/submit-data`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['claim-detail', selectedClaimId] });
+      queryClient.invalidateQueries({ queryKey: ['my-claims'] });
+      toast({
+        title: 'Submitted Successfully',
+        description: 'Your information has been submitted for review.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Submission Failed',
+        description: error.response?.data?.message || 'Failed to submit information',
+        variant: 'destructive',
+      });
+    },
+  });
 
   // Find the latest document request
-  const latestDocRequest = selectedClaim?.ClaimMessage
-    ?.filter((msg) => msg.type === 'DOCUMENT_REQUEST')
-    ?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+  const latestDocRequest = selectedClaim?.communications
+    ?.filter((msg: any) => msg.type === 'DOCUMENT_REQUEST')
+    ?.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
   const dataRequestSchema: DataRequestSchema | null = latestDocRequest?.dataRequestSchema || null;
   const showActionRequired = selectedClaim?.status === 'ACTION_REQUIRED' && dataRequestSchema;
@@ -110,9 +142,9 @@ export default function MyClaimsPage() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {claims.map((claim) => {
-            const entityName = claim.University?.name || claim.UniversityGroup?.name;
-            const hasUnreadMessages = claim.ClaimMessage?.length > 0;
+          {claims.map((claim: any) => {
+            const entityName = claim.university?.name || claim.universityGroup?.name;
+            const hasUnreadMessages = claim.communications?.length > 0;
 
             return (
               <Card
@@ -126,7 +158,7 @@ export default function MyClaimsPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold">{entityName}</h3>
                         <Badge variant="outline">
-                          {claim.University ? 'University' : 'Group'}
+                          {claim.university ? 'University' : 'Group'}
                         </Badge>
                       </div>
 
@@ -138,7 +170,7 @@ export default function MyClaimsPage() {
                         {hasUnreadMessages && (
                           <span className="flex items-center gap-1 text-primary">
                             <MessageSquare className="h-3 w-3" />
-                            {claim.ClaimMessage.length} message(s)
+                            {claim.communications.length} message(s)
                           </span>
                         )}
                       </div>
@@ -146,39 +178,10 @@ export default function MyClaimsPage() {
                       <ClaimStatusBadge status={claim.status} />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {claim.status === 'PENDING' && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/dashboard/claims/edit/${claim.id}`);
-                            }}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setClaimToDelete(claim.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
-                        </>
-                      )}
-                      <Button variant="outline" size="sm">
-                        View Details
-                        <ExternalLink className="h-3 w-3 ml-2" />
-                      </Button>
-                    </div>
+                    <Button variant="outline" size="sm">
+                      View Details
+                      <ExternalLink className="h-3 w-3 ml-2" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -187,38 +190,12 @@ export default function MyClaimsPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!claimToDelete} onOpenChange={() => setClaimToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your claim request.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => {
-                if (claimToDelete) {
-                  deleteMutation.mutate(claimToDelete);
-                  setClaimToDelete(null);
-                }
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Claim Detail Dialog */}
       <Dialog open={!!selectedClaimId} onOpenChange={() => setSelectedClaimId(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Claim Details - {selectedClaim?.University?.name || selectedClaim?.UniversityGroup?.name}
+              Claim Details - {selectedClaim?.university?.name || selectedClaim?.universityGroup?.name}
             </DialogTitle>
             <DialogDescription>
               Track your claim status and communicate with administrators
@@ -247,15 +224,10 @@ export default function MyClaimsPage() {
                 <DataRequestForm
                   schema={dataRequestSchema}
                   onSubmit={async (data, documents) => {
-                    if (selectedClaimId) {
-                      await submitDataMutation.mutateAsync({
-                        claimId: selectedClaimId,
-                        data: {
-                          submittedData: data,
-                          documents,
-                        },
-                      });
-                    }
+                    await submitDataMutation.mutateAsync({
+                      submittedData: data,
+                      documents,
+                    });
                   }}
                   isLoading={submitDataMutation.isPending}
                 />
@@ -322,20 +294,10 @@ export default function MyClaimsPage() {
                 <TabsContent value="chat">
                   <Card className="h-[500px] flex flex-col">
                     <ChatInterface
-                      messages={(selectedClaim.ClaimMessage || []) as ChatMessage[]}
+                      messages={(selectedClaim.communications || []) as ChatMessage[]}
                       currentUserId={selectedClaim.userId}
                       onSendMessage={async (message) => {
-                        if (selectedClaimId) {
-                          await sendMessageMutation.mutateAsync({
-                            claimId: selectedClaimId,
-                            data: { 
-                              message, 
-                              type: 'CHAT',
-                              attachments: [],
-                              isInternalNote: false
-                            },
-                          });
-                        }
+                        await sendMessageMutation.mutateAsync(message);
                       }}
                       isLoading={sendMessageMutation.isPending}
                     />

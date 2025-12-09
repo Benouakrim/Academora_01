@@ -1,49 +1,82 @@
 import { z } from 'zod';
 
 /**
- * Schema for creating a new claim request
- * Validates that either universityId OR universityGroupId is provided (not both)
+ * Re-export schemas from shared package for backward compatibility
+ * This allows existing imports to continue working
  */
-export const createClaimSchema = {
-  body: z.object({
-    requesterName: z.string().min(1, 'Requester name is required'),
-    requesterEmail: z.string().email('Valid business email is required'),
-    position: z.string().min(1, 'Position/title is required'),
-    verificationDocuments: z.array(z.string().url('Each document must be a valid URL'))
-      .min(1, 'At least one verification document is required'),
-    universityId: z.string().optional(),
-    universityGroupId: z.string().optional(),
-    department: z.string().optional(),
-    comments: z.string().optional(),
-  }).refine(
-    (data) => {
-      // Ensure exactly one of universityId or universityGroupId is provided
-      const hasUniversityId = !!data.universityId;
-      const hasUniversityGroupId = !!data.universityGroupId;
-      return (hasUniversityId && !hasUniversityGroupId) || (!hasUniversityId && hasUniversityGroupId);
-    },
-    {
-      message: 'Either universityId or universityGroupId must be provided, but not both',
-      path: ['universityId'], // Error will be attached to universityId field
-    }
-  ),
-};
+export * from '../../../shared/schemas/claimSchemas';
 
 /**
- * Schema for admin reviewing a claim
+ * Server-specific schemas defined using the server's zod version
+ * to avoid type incompatibilities with the validation middleware
  */
+
 export const reviewClaimSchema = {
+  params: z.object({
+    id: z.string(),
+  }),
   body: z.object({
-    status: z.enum(['APPROVED', 'REJECTED'], {
-      errorMap: () => ({ message: 'Status must be either APPROVED or REJECTED' }),
-    }),
+    status: z.enum(['APPROVED', 'REJECTED', 'VERIFIED']),
     adminNotes: z.string().optional(),
   }),
+};
+
+export const createClaimSchema = {
+  body: z.object({
+    universityId: z.string().uuid().optional(),
+    universityGroupId: z.string().uuid().optional(),
+    requesterName: z.string().min(1, 'Name is required'),
+    requesterEmail: z.string().email('Invalid email'),
+    institutionalEmail: z.string().email('Invalid institutional email'),
+    position: z.string().min(1, 'Position is required'),
+    department: z.string().optional(),
+    verificationDocuments: z.array(z.string().url()).min(1, 'At least one verification document is required'),
+    comments: z.string().optional(),
+  }).refine((data) => data.universityId || data.universityGroupId, {
+    message: 'Either universityId or universityGroupId must be provided',
+  }),
+};
+
+export const postMessageSchema = {
   params: z.object({
     id: z.string().uuid(),
   }),
+  body: z.object({
+    message: z.string().min(1, 'Message cannot be empty'),
+    attachments: z.array(z.string().url()).optional().default([]),
+    type: z.enum(['CHAT', 'DOCUMENT_REQUEST', 'INTERNAL_NOTE']).default('CHAT'),
+    isInternalNote: z.boolean().optional().default(false),
+    dataRequestSchema: z.any().optional(),
+  }),
 };
 
-// Type exports for use in controllers/services
-export type CreateClaimData = z.infer<typeof createClaimSchema['body']>;
-export type ReviewClaimData = z.infer<typeof reviewClaimSchema['body']>;
+export const submitClaimDataSchema = {
+  params: z.object({
+    id: z.string().uuid(),
+  }),
+  body: z.object({
+    requestMessageId: z.string().uuid().optional(),
+    submittedData: z.record(z.string(), z.any()),
+    documents: z.array(z.string().url()).optional().default([]),
+  }),
+};
+
+export const updateClaimStatusSchema = {
+  params: z.object({
+    id: z.string().uuid(),
+  }),
+  body: z.object({
+    status: z.enum([
+      'PENDING',
+      'APPROVED',
+      'UNDER_REVIEW',
+      'ACTION_REQUIRED',
+      'PENDING_DOCUMENTS',
+      'VERIFIED',
+      'REJECTED',
+      'ARCHIVED',
+    ]),
+    adminNotes: z.string().optional(),
+    auditNote: z.string().min(1, 'Audit note is required for status changes'),
+  }),
+};

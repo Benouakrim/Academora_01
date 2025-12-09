@@ -50,6 +50,7 @@ const AdminMediaPage = lazy(() => import('@/pages/admin/AdminMediaPage'));
 
 // User Pages
 const MyClaimsPage = lazy(() => import('@/pages/dashboard/MyClaimsPage'));
+const NewClaimPage = lazy(() => import('@/pages/dashboard/NewClaimPage'));
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
 const GroupDetailPage = lazy(() => import('@/pages/GroupDetailPage'));
 const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'));
@@ -95,6 +96,7 @@ export default function App() {
                 <Route path="badges" element={<BadgesPage />} />
                 <Route path="referrals" element={<ReferralDashboardPage />} />
                 <Route path="claims" element={<MyClaimsPage />} />
+                <Route path="claims/new" element={<NewClaimPage />} />
                 <Route path="matching-engine" element={<MatchingEnginePage />} />
               </Route>
             </Route>

@@ -9,6 +9,7 @@ const router = Router();
 
 // Public
 router.get('/', validate(searchUniversitiesSchema), getUniversities);
+router.get('/search', validate(searchUniversitiesSchema), getUniversities); // Add search alias
 router.get('/:slug', getUniversityBySlug);
 
 // Admin Only

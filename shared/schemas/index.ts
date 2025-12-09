@@ -4,3 +4,4 @@
  */
 
 export * from './articleForecasterSchemas';
+export * from './claimSchemas';
